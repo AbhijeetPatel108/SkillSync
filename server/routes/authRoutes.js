@@ -1,29 +1,38 @@
 /**
  * server/routes/authRoutes.js
  *
- * Authentication routes.
+ * REPLACES the scaffold from Module 1.
  *
- * This file is scaffolded now so app.js can safely import it.
- * The full route table is wired up in Module 2 (Authentication).
+ * Route table:
+ * ┌────────┬──────────────────────┬───────────┬────────────────────────────┐
+ * │ Method │ Path                 │ Access    │ What it does               │
+ * ├────────┼──────────────────────┼───────────┼────────────────────────────┤
+ * │ POST   │ /api/auth/register   │ Public    │ Create account + get token │
+ * │ POST   │ /api/auth/login      │ Public    │ Verify credentials + token │
+ * │ GET    │ /api/auth/me         │ Private   │ Return logged-in user data │
+ * │ POST   │ /api/auth/logout     │ Private   │ Signal client to clear JWT │
+ * └────────┴──────────────────────┴───────────┴────────────────────────────┘
  *
- * Final route table (Module 2):
- * ┌────────┬──────────────────────┬──────────┬─────────────────┐
- * │ Method │ Path                 │ Access   │ Controller      │
- * ├────────┼──────────────────────┼──────────┼─────────────────┤
- * │ POST   │ /api/auth/register   │ Public   │ register        │
- * │ POST   │ /api/auth/login      │ Public   │ login           │
- * │ GET    │ /api/auth/me         │ Private  │ getMe           │
- * │ POST   │ /api/auth/logout     │ Private  │ logout          │
- * └────────┴──────────────────────┴──────────┴─────────────────┘
+ * "Private" means the request must include a valid JWT in the
+ * Authorization header:  Authorization: Bearer <token>
+ *
+ * The `protect` middleware handles verification — if it passes,
+ * req.user is set and the controller runs. If it fails, a 401
+ * is returned before the controller is ever called.
  */
 
 const express = require('express');
+const { register, login, getMe, logout } = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// ── Placeholder — replaced in Module 2 ────────────────────────────────────
-router.get('/ping', (_req, res) => {
-  res.json({ success: true, message: 'Auth routes are live ✅' });
-});
+// ── Public ─────────────────────────────────────────────────────────────────
+router.post('/register', register);
+router.post('/login',    login);
+
+// ── Private (JWT required) ────────────────────────────────────────────────
+router.get ('/me',     protect, getMe);
+router.post('/logout', protect, logout);
 
 module.exports = router;

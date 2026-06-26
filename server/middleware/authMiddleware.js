@@ -1,44 +1,43 @@
 /**
  * server/middleware/authMiddleware.js
  *
- * JWT authentication guard.
+ * REPLACES the scaffold from Module 1.
  *
- * `protect` runs before any private route.
- * It reads the Bearer token, verifies it, fetches the user,
- * and attaches them to req.user so every downstream controller
- * can access the authenticated user without another DB call.
+ * Two middleware functions:
  *
- * `authorize` is a role-based access guard.
- * It runs AFTER protect (user must be authenticated first).
+ *  protect    — verifies a JWT and attaches the user to req.user
+ *               Used on every private route
  *
- * Usage in routes:
+ *  authorize  — checks that req.user has one of the required roles
+ *               Always used AFTER protect
  *
- *   // Any logged-in user
- *   router.get('/me', protect, getMe);
+ * How a private route is protected:
  *
- *   // Admins only
- *   router.delete('/user/:id', protect, authorize('admin'), deleteUser);
+ *   router.get('/me', protect, getMe)
  *
- * NOTE: The User model is imported here but the full implementation
- *       is completed in Module 2 (Authentication).
- *       This file is scaffolded now so routes can reference it.
+ *   1. Request arrives with  Authorization: Bearer <token>
+ *   2. protect extracts and verifies the token
+ *   3. protect fetches the user from DB and sets req.user
+ *   4. next() passes control to getMe
+ *   5. getMe reads req.user.id — no second DB call needed for the id
+ *
+ * Express 5 note:
+ *   In Express 5, async errors thrown inside middleware are forwarded to
+ *   the error handler automatically — no try/catch required.
  */
 
-const jwt     = require('jsonwebtoken');
+const jwt      = require('jsonwebtoken');
+const User     = require('../models/User');
 const AppError = require('../utils/AppError');
 
-// Imported when the User model exists (Module 2 onwards)
-let User;
-try {
-  User = require('../models/User');
-} catch {
-  // Model not created yet — protect will be wired up in Module 2
-}
-
-// ── protect ────────────────────────────────────────────────────────────────
+// ─── protect ─────────────────────────────────────────────────────────────────
 const protect = async (req, _res, next) => {
-  // 1. Extract token from Authorization: Bearer <token>
+
+  // ── Step 1: Extract the token ─────────────────────────────────────────────
+  // The client sends:  Authorization: Bearer eyJhbGciOi...
+  // We split on the space and take the second part.
   let token;
+
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer ')
@@ -47,26 +46,25 @@ const protect = async (req, _res, next) => {
   }
 
   if (!token) {
-    return next(new AppError('Access denied. Please log in.', 401));
+    return next(new AppError('Access denied. No token provided.', 401));
   }
 
-  // 2. Verify signature and expiry
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    // jwt.verify throws JsonWebTokenError or TokenExpiredError
-    // errorHandler.js translates both into clean 401 messages
-    return next(err);
-  }
+  // ── Step 2: Verify the token ──────────────────────────────────────────────
+  // jwt.verify() checks two things:
+  //   a) Was this token signed with our JWT_SECRET? (tamper detection)
+  //   b) Has it passed its expiresIn date?
+  //
+  // If either check fails it throws JsonWebTokenError or TokenExpiredError.
+  // Express 5 forwards thrown errors to errorHandler automatically.
+  // errorHandler.js already has specific handling for both of these.
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  // decoded = { id: '64a3...', iat: 1234567890, exp: 1235172690 }
 
-  // 3. Confirm the user still exists in the database
-  //    (covers the case where an account was deleted after token was issued)
-  if (!User) {
-    return next(new AppError('Auth system not initialised', 500));
-  }
-
+  // ── Step 3: Confirm the user still exists ─────────────────────────────────
+  // The token could be valid but the account may have been deleted
+  // after the token was issued. We must verify the user is still in the DB.
   const user = await User.findById(decoded.id);
+
   if (!user) {
     return next(new AppError('The account for this token no longer exists.', 401));
   }
@@ -75,26 +73,32 @@ const protect = async (req, _res, next) => {
     return next(new AppError('Your account has been deactivated.', 401));
   }
 
-  // 4. Attach user to request — controllers read from req.user
+  // ── Step 4: Attach user to the request ───────────────────────────────────
+  // Every controller after this middleware can read req.user
+  // without making another database call.
   req.user = user;
+
   next();
 };
 
-// ── authorize ─────────────────────────────────────────────────────────────
-// A "middleware factory" — a function that RETURNS a middleware function.
-// This pattern lets us pass arguments (the allowed roles) to middleware.
-const authorize = (...roles) => {
-  return (req, _res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError(
-          `Role '${req.user.role}' is not permitted to perform this action`,
-          403
-        )
-      );
-    }
-    next();
-  };
+// ─── authorize ────────────────────────────────────────────────────────────────
+// A middleware factory: authorize('admin') returns a middleware function.
+// This lets us pass arguments (the allowed roles) to middleware inline.
+//
+// Usage:
+//   router.delete('/users/:id', protect, authorize('admin'), deleteUser)
+//
+// Always place AFTER protect — req.user must exist before we check its role.
+const authorize = (...roles) => (req, _res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return next(
+      new AppError(
+        `Role '${req.user.role}' is not permitted to perform this action.`,
+        403
+      )
+    );
+  }
+  next();
 };
 
 module.exports = { protect, authorize };
