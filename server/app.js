@@ -30,7 +30,7 @@ const { notFound }     = require('./middleware/notFound');
 const authRoutes  = require('./routes/authRoutes');
  const userRoutes  = require('./routes/userRoutes');   // Module 3
 const skillRoutes = require('./routes/skillRoutes');  // Module 4
-// const matchRoutes = require('./routes/matchRoutes');  // Module 5
+const matchRoutes = require('./routes/matchRoutes');  // Module 5
 
 const app = express();
 
@@ -82,7 +82,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users',   userRoutes);
 app.use('/api/skills',  skillRoutes);
-// app.use('/api/matches', matchRoutes);
+app.use('/api/matches', matchRoutes);
 
 // ── 7. Catch-all: 404 ─────────────────────────────────────────────────────
 // Any request that didn't match a route above lands here.
