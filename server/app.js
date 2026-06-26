@@ -28,7 +28,7 @@ const { notFound }     = require('./middleware/notFound');
 
 // Routes  (more will be uncommented as we build each module)
 const authRoutes  = require('./routes/authRoutes');
-// const userRoutes  = require('./routes/userRoutes');   // Module 3
+ const userRoutes  = require('./routes/userRoutes');   // Module 3
 // const skillRoutes = require('./routes/skillRoutes');  // Module 4
 // const matchRoutes = require('./routes/matchRoutes');  // Module 5
 
@@ -80,7 +80,7 @@ app.get('/api/health', (_req, res) => {
 // All routes are prefixed with /api/ to clearly separate
 // API calls from any static files you might serve later.
 app.use('/api/auth', authRoutes);
-// app.use('/api/users',   userRoutes);
+app.use('/api/users',   userRoutes);
 // app.use('/api/skills',  skillRoutes);
 // app.use('/api/matches', matchRoutes);
 
