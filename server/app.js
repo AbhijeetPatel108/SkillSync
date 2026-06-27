@@ -11,6 +11,10 @@
  *
  * If any middleware calls next(error), the request skips all remaining
  * regular middleware and lands directly in the error handler at the bottom.
+ *
+ * MODULE 7 CHANGE:
+ *   Added chatRoutes import and app.use('/api/chat', chatRoutes).
+ *   Everything else is identical to the Module 6 version.
  */
 
 const express = require('express');
@@ -26,12 +30,14 @@ const morgan  = require('morgan');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound }     = require('./middleware/notFound');
 
-// Routes  (more will be uncommented as we build each module)
-const authRoutes  = require('./routes/authRoutes');
-const userRoutes  = require('./routes/userRoutes');   // Module 3
-const skillRoutes = require('./routes/skillRoutes');  // Module 4
-const matchRoutes = require('./routes/matchRoutes');  // Module 5
+// Routes
+const authRoutes   = require('./routes/authRoutes');
+const userRoutes   = require('./routes/userRoutes');
+const skillRoutes  = require('./routes/skillRoutes');
+const matchRoutes  = require('./routes/matchRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const chatRoutes   = require('./routes/chatRoutes');   // Module 7
+
 const app = express();
 
 // ── 1. Security Headers ───────────────────────────────────────────────────
@@ -79,11 +85,13 @@ app.get('/api/health', (_req, res) => {
 // ── 6. API Routes ─────────────────────────────────────────────────────────
 // All routes are prefixed with /api/ to clearly separate
 // API calls from any static files you might serve later.
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',    authRoutes);
 app.use('/api/users',   userRoutes);
 app.use('/api/skills',  skillRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/chat',    chatRoutes);    // Module 7
+
 // ── 7. Catch-all: 404 ─────────────────────────────────────────────────────
 // Any request that didn't match a route above lands here.
 // Must come AFTER all routes.
