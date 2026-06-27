@@ -28,10 +28,10 @@ const { notFound }     = require('./middleware/notFound');
 
 // Routes  (more will be uncommented as we build each module)
 const authRoutes  = require('./routes/authRoutes');
- const userRoutes  = require('./routes/userRoutes');   // Module 3
+const userRoutes  = require('./routes/userRoutes');   // Module 3
 const skillRoutes = require('./routes/skillRoutes');  // Module 4
 const matchRoutes = require('./routes/matchRoutes');  // Module 5
-
+const reviewRoutes = require('./routes/reviewRoutes');
 const app = express();
 
 // ── 1. Security Headers ───────────────────────────────────────────────────
@@ -83,7 +83,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users',   userRoutes);
 app.use('/api/skills',  skillRoutes);
 app.use('/api/matches', matchRoutes);
-
+app.use('/api/reviews', reviewRoutes);
 // ── 7. Catch-all: 404 ─────────────────────────────────────────────────────
 // Any request that didn't match a route above lands here.
 // Must come AFTER all routes.

@@ -110,19 +110,21 @@ const getUserById = async (req, res) => {
   }
 
   // Return a curated public view — strip lastLogin, role, isActive
-  res.status(200).json({
-    success: true,
-    user: {
-      id:            user.id,
-      name:          user.name,
-      avatar:        user.avatar,
-      bio:           user.bio,
-      location:      user.location,
-      skillsOffered: user.skillsOffered,
-      skillsWanted:  user.skillsWanted,
-      createdAt:     user.createdAt,
-    },
-  });
+ res.status(200).json({
+  success: true,
+  user: {
+    id:             user.id,
+    name:           user.name,
+    avatar:         user.avatar,
+    bio:            user.bio,
+    location:       user.location,
+    averageRating:  user.averageRating,
+    totalReviews:   user.totalReviews,
+    skillsOffered:  user.skillsOffered,
+    skillsWanted:   user.skillsWanted,
+    createdAt:      user.createdAt,
+  },
+});
 };
 
 // ─── PUT /api/users/profile ───────────────────────────────────────────────────
