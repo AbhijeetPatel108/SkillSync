@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { FiArrowRight, FiLock, FiMail, FiStar } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
+
 import { useAuth } from "../../context/AuthContext";
 
 function Login() {
@@ -31,84 +33,80 @@ function Login() {
       await login(formData);
       navigate("/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again."
-      );
+      setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-      <div className="w-full max-w-md bg-slate-800 rounded-2xl p-8 shadow-xl">
-
-        <h1 className="text-3xl font-bold text-white text-center mb-2">
-          Welcome Back
-        </h1>
-
-        <p className="text-slate-400 text-center mb-8">
-          Login to continue to SkillSync
-        </p>
-
-        {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-lg mb-5">
-            {error}
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.25),_transparent_35%),linear-gradient(135deg,_#020617_0%,_#0f172a_100%)] px-4 py-10">
+      <div className="w-full max-w-md overflow-hidden rounded-[30px] border border-white/10 bg-slate-900/80 shadow-[0_30px_100px_-20px_rgba(76,29,149,0.9)] backdrop-blur-xl">
+        <div className="bg-gradient-to-r from-[#7C3AED] via-[#8b5cf6] to-[#4338ca] px-6 py-7 text-center sm:px-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg shadow-violet-900/20">
+            <FiStar size={26} />
           </div>
-        )}
+          <h1 className="mt-4 text-3xl font-semibold text-white">Welcome back</h1>
+          <p className="mt-2 text-sm text-violet-100/90">Continue building your SkillSync network.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="p-6 sm:p-8">
+          {error && (
+            <div className="mb-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {error}
+            </div>
+          )}
 
-          <div>
-            <label className="block text-slate-300 mb-2">
-              Email
-            </label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Email</label>
+              <div className="relative">
+                <FiMail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="you@example.com"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/70 py-3 pl-11 pr-4 text-white outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                />
+              </div>
+            </div>
 
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 outline-none border border-slate-600 focus:border-blue-500"
-            />
-          </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Password</label>
+              <div className="relative">
+                <FiLock className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder="••••••••"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/70 py-3 pl-11 pr-4 text-white outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-slate-300 mb-2">
-              Password
-            </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7C3AED] to-[#8b5cf6] px-4 py-3.5 font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? "Logging in..." : "Login"}
+              {!loading && <FiArrowRight />}
+            </button>
+          </form>
 
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 outline-none border border-slate-600 focus:border-blue-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-
-        </form>
-
-        <p className="text-center text-slate-400 mt-6">
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="text-blue-400 hover:text-blue-300"
-          >
-            Register
-          </Link>
-        </p>
-
+          <p className="mt-6 text-center text-sm text-slate-400">
+            Don&apos;t have an account?{" "}
+            <Link to="/register" className="font-medium text-violet-300 transition hover:text-violet-200">
+              Register
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
