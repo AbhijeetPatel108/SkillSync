@@ -33,9 +33,9 @@ dotenv.config();
 const http = require('http');
 const { Server } = require('socket.io');
 
-const app       = require('./app');
-const connectDB = require('./config/db');
-const socketAuth    = require('./socket/socketAuth');
+const app = require('./app');
+const { connectDB } = require('./config/db');
+const socketAuth = require('./socket/socketAuth');
 const { initSocketHandler } = require('./socket/socketHandler');
 
 const PORT = process.env.PORT || 5000;

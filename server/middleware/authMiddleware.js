@@ -26,16 +26,11 @@
  *   the error handler automatically — no try/catch required.
  */
 
-const jwt      = require('jsonwebtoken');
-const User     = require('../models/User');
+const jwt = require('jsonwebtoken');
+const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 
-// ─── protect ─────────────────────────────────────────────────────────────────
 const protect = async (req, _res, next) => {
-
-  // ── Step 1: Extract the token ─────────────────────────────────────────────
-  // The client sends:  Authorization: Bearer eyJhbGciOi...
-  // We split on the space and take the second part.
   let token;
 
   if (
@@ -49,34 +44,25 @@ const protect = async (req, _res, next) => {
     return next(new AppError('Access denied. No token provided.', 401));
   }
 
-  // ── Step 2: Verify the token ──────────────────────────────────────────────
-  // jwt.verify() checks two things:
-  //   a) Was this token signed with our JWT_SECRET? (tamper detection)
-  //   b) Has it passed its expiresIn date?
-  //
-  // If either check fails it throws JsonWebTokenError or TokenExpiredError.
-  // Express 5 forwards thrown errors to errorHandler automatically.
-  // errorHandler.js already has specific handling for both of these.
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  // decoded = { id: '64a3...', iat: 1234567890, exp: 1235172690 }
 
-  // ── Step 3: Confirm the user still exists ─────────────────────────────────
-  // The token could be valid but the account may have been deleted
-  // after the token was issued. We must verify the user is still in the DB.
-  const user = await User.findById(decoded.id);
+  const [rows] = await pool.execute(
+    'SELECT * FROM users WHERE id = ? AND is_active = 1 LIMIT 1',
+    [decoded.id]
+  );
+
+  const user = rows[0];
 
   if (!user) {
     return next(new AppError('The account for this token no longer exists.', 401));
   }
 
-  if (!user.isActive) {
-    return next(new AppError('Your account has been deactivated.', 401));
-  }
-
-  // ── Step 4: Attach user to the request ───────────────────────────────────
-  // Every controller after this middleware can read req.user
-  // without making another database call.
-  req.user = user;
+  req.user = {
+    ...user,
+    id: Number(user.id),
+    isActive: Boolean(user.is_active),
+    role: user.role,
+  };
 
   next();
 };

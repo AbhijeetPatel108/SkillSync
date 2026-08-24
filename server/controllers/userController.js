@@ -13,10 +13,11 @@
  * userRoutes.js passes through the `protect` middleware first.
  */
 
-const User      = require('../models/User');
-const AppError  = require('../utils/AppError');
-const { pick }  = require('../utils/helpers');
+const { pool } = require('../config/db');
+const AppError = require('../utils/AppError');
+const { pick } = require('../utils/helpers');
 const { SKILL_CATEGORIES, SKILL_LEVELS } = require('../config/constants');
+const { fetchUserProfile } = require('../utils/userSql');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ const getMyProfile = async (req, res) => {
   // req.user is the lean user document attached by protect middleware.
   // We re-fetch here so the response always reflects the latest DB state,
   // and so the toJSON transform (id, no __v) applies cleanly.
-  const user = await User.findById(req.user.id);
+  const user = await fetchUserProfile(req.user.id, true);
 
   if (!user) {
     throw new AppError('User not found', 404);
@@ -94,7 +95,13 @@ const getMyProfile = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    user,
+    user: {
+      ...user,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      lastLogin: user.lastLogin,
+    },
   });
 };
 
@@ -103,28 +110,27 @@ const getMyProfile = async (req, res) => {
 // Sensitive fields are never selected (password has select:false in schema).
 // @access  Private (logged in users only — for future "is matched?" checks)
 const getUserById = async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await fetchUserProfile(req.params.id, false);
 
-  if (!user || !user.isActive) {
+  if (!user) {
     throw new AppError('User not found', 404);
   }
 
-  // Return a curated public view — strip lastLogin, role, isActive
- res.status(200).json({
-  success: true,
-  user: {
-    id:             user.id,
-    name:           user.name,
-    avatar:         user.avatar,
-    bio:            user.bio,
-    location:       user.location,
-    averageRating:  user.averageRating,
-    totalReviews:   user.totalReviews,
-    skillsOffered:  user.skillsOffered,
-    skillsWanted:   user.skillsWanted,
-    createdAt:      user.createdAt,
-  },
-});
+  res.status(200).json({
+    success: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      location: user.location,
+      averageRating: user.averageRating,
+      totalReviews: user.totalReviews,
+      skillsOffered: user.skillsOffered,
+      skillsWanted: user.skillsWanted,
+      createdAt: user.createdAt,
+    },
+  });
 };
 
 // ─── PUT /api/users/profile ───────────────────────────────────────────────────
@@ -175,16 +181,48 @@ const updateProfile = async (req, res) => {
   // ── Apply updates ─────────────────────────────────────────────────────────
   // findByIdAndUpdate with { new: true } returns the UPDATED document.
   // runValidators: true re-runs Mongoose schema validators on the changed fields.
-  const user = await User.findByIdAndUpdate(
-    req.user.id,
-    { $set: updates },
-    { new: true, runValidators: true }
+  const fields = [];
+  const values = [];
+
+  if (updates.name !== undefined) {
+    fields.push('name = ?');
+    values.push(updates.name);
+  }
+  if (updates.bio !== undefined) {
+    fields.push('bio = ?');
+    values.push(updates.bio);
+  }
+  if (updates.location !== undefined) {
+    fields.push('location = ?');
+    values.push(updates.location);
+  }
+  if (updates.avatar !== undefined) {
+    fields.push('avatar = ?');
+    values.push(updates.avatar);
+  }
+
+  if (!fields.length) {
+    throw new AppError('Nothing to update. Allowed fields: name, bio, location, avatar', 400);
+  }
+
+  values.push(req.user.id);
+  await pool.execute(
+    `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+    values
   );
+
+  const user = await fetchUserProfile(req.user.id, true);
 
   res.status(200).json({
     success: true,
     message: 'Profile updated successfully',
-    user,
+    user: {
+      ...user,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      lastLogin: user.lastLogin,
+    },
   });
 };
 
@@ -194,34 +232,41 @@ const updateProfile = async (req, res) => {
 const addOfferedSkill = async (req, res) => {
   const skill = parseAndValidateSkill(req.body);
 
-  const user = await User.findById(req.user.id);
-
-  // ── Duplicate check (case-insensitive) ───────────────────────────────────
-  if (isDuplicateSkill(user.skillsOffered, skill.name)) {
-    throw new AppError(
-      `You already offer a skill named "${skill.name}"`,
-      409
-    );
+  const [existingRows] = await pool.execute(
+    'SELECT id FROM user_skill_offered WHERE user_id = ? AND LOWER(name) = LOWER(?) LIMIT 1',
+    [req.user.id, skill.name]
+  );
+  if (existingRows.length > 0) {
+    throw new AppError(`You already offer a skill named "${skill.name}"`, 409);
   }
 
-  // ── 10-skill cap ─────────────────────────────────────────────────────────
-  if (user.skillsOffered.length >= 10) {
+  const [rows] = await pool.execute(
+    'SELECT COUNT(*) AS cnt FROM user_skill_offered WHERE user_id = ?',
+    [req.user.id]
+  );
+  if (rows[0].cnt >= 10) {
     throw new AppError('You can offer a maximum of 10 skills', 400);
   }
 
-  // $push appends to the array without loading all other fields.
-  // We then re-fetch so the response has the full, clean user document.
-  await User.findByIdAndUpdate(
-    req.user.id,
-    { $push: { skillsOffered: skill } }
+  await pool.execute(
+    'INSERT INTO user_skill_offered (user_id, name, category, level, description) VALUES (?, ?, ?, ?, ?)',
+    [req.user.id, skill.name, skill.category, skill.level, skill.description]
   );
 
-  const updated = await User.findById(req.user.id);
+  const [updatedRows] = await pool.execute(
+    'SELECT name, category, level, description FROM user_skill_offered WHERE user_id = ? ORDER BY name ASC',
+    [req.user.id]
+  );
 
   res.status(201).json({
     success: true,
     message: `"${skill.name}" added to your offered skills`,
-    skillsOffered: updated.skillsOffered,
+    skillsOffered: updatedRows.map((row) => ({
+      name: row.name,
+      category: row.category,
+      level: row.level,
+      description: row.description || '',
+    })),
   });
 };
 
@@ -231,34 +276,33 @@ const addOfferedSkill = async (req, res) => {
 const removeOfferedSkill = async (req, res) => {
   const skillName = req.params.skillName.trim();
 
-  const user = await User.findById(req.user.id);
-
-  // Check the skill actually exists before attempting removal
-  const exists = isDuplicateSkill(user.skillsOffered, skillName);
-  if (!exists) {
+  const [existingRows] = await pool.execute(
+    'SELECT id FROM user_skill_offered WHERE user_id = ? AND LOWER(name) = LOWER(?) LIMIT 1',
+    [req.user.id, skillName]
+  );
+  if (existingRows.length === 0) {
     throw new AppError(`You do not have an offered skill named "${skillName}"`, 404);
   }
 
-  // $pull removes all array elements that match the condition.
-  // The regex makes the removal case-insensitive so
-  // "Python" and "python" both match "Python" in the DB.
-  await User.findByIdAndUpdate(
-    req.user.id,
-    {
-      $pull: {
-        skillsOffered: {
-          name: { $regex: new RegExp(`^${skillName}$`, 'i') },
-        },
-      },
-    }
+  await pool.execute(
+    'DELETE FROM user_skill_offered WHERE user_id = ? AND LOWER(name) = LOWER(?)',
+    [req.user.id, skillName]
   );
 
-  const updated = await User.findById(req.user.id);
+  const [updatedRows] = await pool.execute(
+    'SELECT name, category, level, description FROM user_skill_offered WHERE user_id = ? ORDER BY name ASC',
+    [req.user.id]
+  );
 
   res.status(200).json({
     success: true,
     message: `"${skillName}" removed from your offered skills`,
-    skillsOffered: updated.skillsOffered,
+    skillsOffered: updatedRows.map((row) => ({
+      name: row.name,
+      category: row.category,
+      level: row.level,
+      description: row.description || '',
+    })),
   });
 };
 
@@ -268,30 +312,41 @@ const removeOfferedSkill = async (req, res) => {
 const addWantedSkill = async (req, res) => {
   const skill = parseAndValidateSkill(req.body);
 
-  const user = await User.findById(req.user.id);
-
-  if (isDuplicateSkill(user.skillsWanted, skill.name)) {
-    throw new AppError(
-      `"${skill.name}" is already in your wanted skills`,
-      409
-    );
+  const [existingRows] = await pool.execute(
+    'SELECT id FROM user_skill_wanted WHERE user_id = ? AND LOWER(name) = LOWER(?) LIMIT 1',
+    [req.user.id, skill.name]
+  );
+  if (existingRows.length > 0) {
+    throw new AppError(`"${skill.name}" is already in your wanted skills`, 409);
   }
 
-  if (user.skillsWanted.length >= 10) {
+  const [rows] = await pool.execute(
+    'SELECT COUNT(*) AS cnt FROM user_skill_wanted WHERE user_id = ?',
+    [req.user.id]
+  );
+  if (rows[0].cnt >= 10) {
     throw new AppError('You can list a maximum of 10 wanted skills', 400);
   }
 
-  await User.findByIdAndUpdate(
-    req.user.id,
-    { $push: { skillsWanted: skill } }
+  await pool.execute(
+    'INSERT INTO user_skill_wanted (user_id, name, category, level, description) VALUES (?, ?, ?, ?, ?)',
+    [req.user.id, skill.name, skill.category, skill.level, skill.description]
   );
 
-  const updated = await User.findById(req.user.id);
+  const [updatedRows] = await pool.execute(
+    'SELECT name, category, level, description FROM user_skill_wanted WHERE user_id = ? ORDER BY name ASC',
+    [req.user.id]
+  );
 
   res.status(201).json({
     success: true,
     message: `"${skill.name}" added to your wanted skills`,
-    skillsWanted: updated.skillsWanted,
+    skillsWanted: updatedRows.map((row) => ({
+      name: row.name,
+      category: row.category,
+      level: row.level,
+      description: row.description || '',
+    })),
   });
 };
 
@@ -301,30 +356,33 @@ const addWantedSkill = async (req, res) => {
 const removeWantedSkill = async (req, res) => {
   const skillName = req.params.skillName.trim();
 
-  const user = await User.findById(req.user.id);
-
-  const exists = isDuplicateSkill(user.skillsWanted, skillName);
-  if (!exists) {
+  const [existingRows] = await pool.execute(
+    'SELECT id FROM user_skill_wanted WHERE user_id = ? AND LOWER(name) = LOWER(?) LIMIT 1',
+    [req.user.id, skillName]
+  );
+  if (existingRows.length === 0) {
     throw new AppError(`You do not have a wanted skill named "${skillName}"`, 404);
   }
 
-  await User.findByIdAndUpdate(
-    req.user.id,
-    {
-      $pull: {
-        skillsWanted: {
-          name: { $regex: new RegExp(`^${skillName}$`, 'i') },
-        },
-      },
-    }
+  await pool.execute(
+    'DELETE FROM user_skill_wanted WHERE user_id = ? AND LOWER(name) = LOWER(?)',
+    [req.user.id, skillName]
   );
 
-  const updated = await User.findById(req.user.id);
+  const [updatedRows] = await pool.execute(
+    'SELECT name, category, level, description FROM user_skill_wanted WHERE user_id = ? ORDER BY name ASC',
+    [req.user.id]
+  );
 
   res.status(200).json({
     success: true,
     message: `"${skillName}" removed from your wanted skills`,
-    skillsWanted: updated.skillsWanted,
+    skillsWanted: updatedRows.map((row) => ({
+      name: row.name,
+      category: row.category,
+      level: row.level,
+      description: row.description || '',
+    })),
   });
 };
 
