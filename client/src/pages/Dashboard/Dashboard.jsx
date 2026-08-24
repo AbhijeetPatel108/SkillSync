@@ -59,24 +59,24 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl space-y-8">
         <WelcomeBanner />
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard title="My Skills" value={12} color="text-violet-300" icon={<FiBookOpen />} subtitle="+3 this week" accent="from-violet-500/20 to-violet-500/5" />
           <StatCard title="Matches" value={8} color="text-emerald-300" icon={<FiUsers />} subtitle="+2 today" accent="from-emerald-500/20 to-emerald-500/5" />
           <StatCard title="Reviews" value={19} color="text-amber-300" icon={<FiStar />} subtitle="4.9 Rating" accent="from-amber-500/20 to-amber-500/5" />
           <StatCard title="Messages" value={34} color="text-pink-300" icon={<FiMessageCircle />} subtitle="5 unread" accent="from-pink-500/20 to-pink-500/5" />
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.45fr_0.85fr]">
-          <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-5 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6">
-            <div className="mb-6 flex items-center justify-between">
+        <div className="grid gap-6 lg:grid-cols-[1.45fr_0.85fr]">
+          <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-5 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6">
+            <div className="mb-6 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.28em] text-violet-300">Activity</p>
                 <h2 className="mt-1 text-2xl font-semibold text-white">Recent Activity</h2>
               </div>
-              <button className="flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20">
+              <button className="inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20">
                 View All
                 <FiArrowRight />
               </button>
@@ -87,9 +87,9 @@ function Dashboard() {
                 <ActivityCard key={index} activity={activity} />
               ))}
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-5 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6">
+          <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-5 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6">
             <div className="mb-5">
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-violet-300">Quick start</p>
               <h2 className="mt-1 text-2xl font-semibold text-white">Quick Actions</h2>
@@ -99,6 +99,7 @@ function Dashboard() {
               {actions.map((action) => (
                 <button
                   key={action.title}
+                  type="button"
                   onClick={() => navigate(action.path)}
                   className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-400/30 hover:bg-slate-800"
                 >
@@ -109,7 +110,7 @@ function Dashboard() {
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>

@@ -2,13 +2,10 @@ import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
 import { useAuth } from "../../context/AuthContext";
-
 import chatService from "../../services/chatService";
-
 import ChatSidebar from "../../components/chat/ChatSidebar";
 import ChatWindow from "../../components/chat/ChatWindow";
 import EmptyChat from "../../components/chat/EmptyChat";
-
 
 const socket = io("http://localhost:5000", {
   auth: {
@@ -21,13 +18,11 @@ function Chat() {
 
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
-
   const [messages, setMessages] = useState([]);
 
   const loadRooms = async () => {
     try {
       const res = await chatService.getRooms();
-
       setRooms(res.rooms || []);
     } catch (err) {
       console.error(err);
@@ -38,26 +33,24 @@ function Chat() {
     try {
       const res = await chatService.getMessages(matchId);
 
-      setMessages(
-        [...(res.messages || [])].reverse()
+      setMessages([...(res.messages || [])].reverse());
+
+      await chatService.markAsRead(matchId);
+
+      socket.emit("mark_read", {
+        matchId,
+      });
+
+      setRooms((prev) =>
+        prev.map((room) =>
+          room.matchId === matchId
+            ? {
+                ...room,
+                unreadCount: 0,
+              }
+            : room
+        )
       );
-
-     await chatService.markAsRead(matchId);
-
-socket.emit("mark_read", {
-  matchId,
-});
-
-setRooms(prev =>
-  prev.map(room =>
-    room.matchId === matchId
-      ? {
-          ...room,
-          unreadCount: 0,
-        }
-      : room
-  )
-);
     } catch (err) {
       console.error(err);
     }
@@ -68,60 +61,51 @@ setRooms(prev =>
   }, []);
 
   useEffect(() => {
-  if (!selectedRoom) return;
+    if (!selectedRoom) return;
 
-  loadMessages(selectedRoom.matchId);
+    loadMessages(selectedRoom.matchId);
 
-  socket.emit("join_room", {
-  matchId: selectedRoom.matchId,
-});
+    socket.emit("join_room", {
+      matchId: selectedRoom.matchId,
+    });
 
-socket.on("room_joined", ({ messages }) => {
-  setMessages(messages);
-});
-
-}, [selectedRoom]);
+    socket.on("room_joined", ({ messages }) => {
+      setMessages(messages);
+    });
+  }, [selectedRoom]);
 
   useEffect(() => {
-  socket.on("new_message", ({ message }) => {
+    socket.on("new_message", ({ message }) => {
+      setMessages((prev) => [...prev, message]);
 
-    setMessages(prev => [...prev, message]);
-
-    setRooms(prev =>
-        prev.map(room =>
-            room.matchId === message.match
-                ? {
-                    ...room,
-                    latestMessage: message,
-                }
-                : room
+      setRooms((prev) =>
+        prev.map((room) =>
+          room.matchId === message.match
+            ? {
+                ...room,
+                latestMessage: message,
+              }
+            : room
         )
-    );
+      );
+    });
 
-});
-
-  return () => {
-    socket.off("new_message");
-  };
-}, []);
+    return () => {
+      socket.off("new_message");
+    };
+  }, []);
 
   const sendMessage = (content) => {
     if (!selectedRoom) return;
 
-   console.log("Sending:", {
-  matchId: selectedRoom.matchId,
-  content,
-});
-
-socket.emit("send_message", {
-  matchId: selectedRoom.matchId,
-  content,
-});
+    socket.emit("send_message", {
+      matchId: selectedRoom.matchId,
+      content,
+    });
   };
 
   return (
     <div className="h-screen bg-slate-900 flex">
-
       <ChatSidebar
         rooms={rooms}
         selectedRoom={selectedRoom}
@@ -138,7 +122,6 @@ socket.emit("send_message", {
       ) : (
         <EmptyChat />
       )}
-
     </div>
   );
 }

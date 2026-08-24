@@ -1,10 +1,4 @@
-/**
- * server/config/db.js
- *
- * MySQL connection pool configured with the existing environment variables.
- * The application uses mysql2 with parameterized queries and does not rely on
- * any Mongoose runtime behavior.
- */
+
 
 const mysql = require('mysql2/promise');
 
@@ -23,7 +17,7 @@ const pool = mysql.createPool({
 const connectDB = async () => {
   try {
     const connection = await pool.getConnection();
-    console.log(`✅ MySQL connected: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
+    
     connection.release();
   } catch (err) {
     console.error(`❌ MySQL connection failed: ${err.message}`);

@@ -1,27 +1,10 @@
-/**
- * server/models/User.js
- *
- * MODULE 6 CHANGE — two new fields added to the schema:
- *   averageRating  {Number}  — recomputed by Review.recalcStats() after each review
- *   totalReviews   {Number}  — recomputed by Review.recalcStats() after each review
- *
- * Everything else is identical to the Module 2 version.
- * No hooks, methods, or indexes were changed.
- *
- * Why store these on User instead of computing them on every request?
- *   Computing average rating requires a MongoDB aggregation over the reviews
- *   collection every time a profile is loaded — expensive as reviews grow.
- *   Storing the pre-computed value means any profile fetch is a single
- *   document read. The trade-off is that we must update these values
- *   whenever a review is created or deleted (Review.recalcStats handles this).
- *   This is the standard "denormalization for read performance" pattern.
- */
+
 
 const mongoose = require('mongoose');
 const bcrypt   = require('bcryptjs');
 const { BCRYPT_SALT_ROUNDS, SKILL_CATEGORIES, SKILL_LEVELS, USER_ROLES } = require('../config/constants');
 
-// ─── Sub-schema: one skill entry ─────────────────────────────────────────────
+
 const skillSchema = new mongoose.Schema(
   {
     name: {
@@ -56,7 +39,7 @@ const skillSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// ─── Main schema ──────────────────────────────────────────────────────────────
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -139,10 +122,10 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
-    // ── MODULE 6 ADDITIONS ─────────────────────────────────────────────────
-    // Both fields are managed exclusively by Review.recalcStats().
-    // Controllers must NEVER update these directly — always go through recalcStats.
-    // default: 0 means new users show "No reviews yet" until their first review.
+    
+    
+    
+    
 
     averageRating: {
       type:    Number,
@@ -156,7 +139,7 @@ const userSchema = new mongoose.Schema(
       default: 0,
       min:     [0, 'Total reviews cannot be negative'],
     },
-    // ── END MODULE 6 ADDITIONS ─────────────────────────────────────────────
+    
   },
   {
     timestamps: true,
@@ -172,7 +155,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// ─── Pre-save hook: hash password ────────────────────────────────────────────
+
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
 
@@ -181,12 +164,12 @@ userSchema.pre('save', async function () {
     BCRYPT_SALT_ROUNDS
   );
 });
-// ─── Instance method: comparePassword ────────────────────────────────────────
+
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// ─── Indexes ──────────────────────────────────────────────────────────────────
+
 userSchema.index({ 'skillsOffered.category': 1 });
 userSchema.index({ 'skillsWanted.category':  1 });
 userSchema.index({ location: 1 });

@@ -1,17 +1,4 @@
-/**
- * server/controllers/userController.js
- *
- * Handles everything related to user profiles and skill management.
- *
- * MVC role: CONTROLLER — receives a validated, authenticated request,
- * talks to the User model, returns structured JSON.
- *
- * All functions are async. Express 5 forwards thrown errors to
- * errorHandler automatically — no try/catch needed anywhere.
- *
- * req.user is always available here because every route in
- * userRoutes.js passes through the `protect` middleware first.
- */
+
 
 const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
@@ -19,18 +6,9 @@ const { pick } = require('../utils/helpers');
 const { SKILL_CATEGORIES, SKILL_LEVELS } = require('../config/constants');
 const { fetchUserProfile } = require('../utils/userSql');
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Validates a single skill object before it touches the database.
- * Used by both addOfferedSkill and addWantedSkill.
- *
- * Returns a clean, normalised skill object ready for MongoDB,
- * or throws an AppError with a precise 400 message.
- *
- * @param {object} body - req.body
- * @returns {{ name, category, level, description }}
- */
+
+
 const parseAndValidateSkill = (body) => {
   const { name, category, level, description } = body;
 
@@ -67,26 +45,19 @@ const parseAndValidateSkill = (body) => {
   };
 };
 
-/**
- * Checks whether a skill with the same name (case-insensitive)
- * already exists in the given array.
- *
- * @param {Array}  skillsArray - user.skillsOffered or user.skillsWanted
- * @param {string} skillName   - the name to check
- * @returns {boolean}
- */
+
 const isDuplicateSkill = (skillsArray, skillName) =>
   skillsArray.some(
     (s) => s.name.toLowerCase() === skillName.toLowerCase()
   );
 
-// ─── GET /api/users/profile ───────────────────────────────────────────────────
-// Returns the full profile of the currently logged-in user.
-// @access  Private
+
+
+
 const getMyProfile = async (req, res) => {
-  // req.user is the lean user document attached by protect middleware.
-  // We re-fetch here so the response always reflects the latest DB state,
-  // and so the toJSON transform (id, no __v) applies cleanly.
+  
+  
+  
   const user = await fetchUserProfile(req.user.id, true);
 
   if (!user) {
@@ -105,10 +76,10 @@ const getMyProfile = async (req, res) => {
   });
 };
 
-// ─── GET /api/users/:id ───────────────────────────────────────────────────────
-// Returns the PUBLIC profile of any user by their MongoDB id.
-// Sensitive fields are never selected (password has select:false in schema).
-// @access  Private (logged in users only — for future "is matched?" checks)
+
+
+
+
 const getUserById = async (req, res) => {
   const user = await fetchUserProfile(req.params.id, false);
 
@@ -133,18 +104,18 @@ const getUserById = async (req, res) => {
   });
 };
 
-// ─── PUT /api/users/profile ───────────────────────────────────────────────────
-// Updates the logged-in user's basic profile info.
-// Skills have their own dedicated endpoints — they are NOT updated here.
-// @access  Private
+
+
+
+
 const updateProfile = async (req, res) => {
-  // pick() allows only these four fields — any extra keys in req.body are dropped.
-  // This is the primary defence against mass-assignment:
-  //   e.g. if someone sends { role: 'admin' }, it is silently ignored.
+  
+  
+  
   const allowedFields = ['name', 'bio', 'location', 'avatar'];
   const updates = pick(req.body, allowedFields);
 
-  // ── Field-level validation ────────────────────────────────────────────────
+  
   if (Object.keys(updates).length === 0) {
     throw new AppError(
       `Nothing to update. Allowed fields: ${allowedFields.join(', ')}`,
@@ -170,7 +141,7 @@ const updateProfile = async (req, res) => {
   }
 
   if (updates.avatar !== undefined) {
-    // Basic URL format check
+    
     try {
       new URL(updates.avatar);
     } catch {
@@ -178,9 +149,9 @@ const updateProfile = async (req, res) => {
     }
   }
 
-  // ── Apply updates ─────────────────────────────────────────────────────────
-  // findByIdAndUpdate with { new: true } returns the UPDATED document.
-  // runValidators: true re-runs Mongoose schema validators on the changed fields.
+  
+  
+  
   const fields = [];
   const values = [];
 
@@ -226,9 +197,9 @@ const updateProfile = async (req, res) => {
   });
 };
 
-// ─── POST /api/users/skills/offered ──────────────────────────────────────────
-// Adds one skill to the logged-in user's skillsOffered array.
-// @access  Private
+
+
+
 const addOfferedSkill = async (req, res) => {
   const skill = parseAndValidateSkill(req.body);
 
@@ -270,9 +241,9 @@ const addOfferedSkill = async (req, res) => {
   });
 };
 
-// ─── DELETE /api/users/skills/offered/:skillName ──────────────────────────────
-// Removes a skill from skillsOffered by name (case-insensitive).
-// @access  Private
+
+
+
 const removeOfferedSkill = async (req, res) => {
   const skillName = req.params.skillName.trim();
 
@@ -306,9 +277,9 @@ const removeOfferedSkill = async (req, res) => {
   });
 };
 
-// ─── POST /api/users/skills/wanted ───────────────────────────────────────────
-// Adds one skill to the logged-in user's skillsWanted array.
-// @access  Private
+
+
+
 const addWantedSkill = async (req, res) => {
   const skill = parseAndValidateSkill(req.body);
 
@@ -350,9 +321,9 @@ const addWantedSkill = async (req, res) => {
   });
 };
 
-// ─── DELETE /api/users/skills/wanted/:skillName ───────────────────────────────
-// Removes a skill from skillsWanted by name (case-insensitive).
-// @access  Private
+
+
+
 const removeWantedSkill = async (req, res) => {
   const skillName = req.params.skillName.trim();
 

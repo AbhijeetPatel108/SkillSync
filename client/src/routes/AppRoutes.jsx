@@ -9,15 +9,14 @@ import ProtectedRoute from "./ProtectedRoute";
 import Matches from "../pages/Matches/Matches";
 import Reviews from "../pages/Reviews/Reviews";
 import Chat from "../pages/Chat/Chat";
+
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
@@ -27,63 +26,54 @@ function AppRoutes() {
           }
         />
         <Route
-  path="/skills"
-  element={
-    <ProtectedRoute>
-      <Skills />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/profile"
-  element={
-    <ProtectedRoute>
-      <Profile />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/profile/edit"
-  element={
-    <ProtectedRoute>
-      <EditProfile />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/matches"
-  element={
-    <ProtectedRoute>
-      <Matches />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/reviews/:userId"
-  element={
-    <ProtectedRoute>
-      <Reviews />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/messages"
-  element={
-    <ProtectedRoute>
-      <Chat />
-    </ProtectedRoute>
-  }
-/>
-        {/* Default Route */}
+          path="/skills"
+          element={
+            <ProtectedRoute>
+              <Skills />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/edit"
+          element={
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches"
+          element={
+            <ProtectedRoute>
+              <Matches />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reviews/:userId"
+          element={
+            <ProtectedRoute>
+              <Reviews />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-        {/* Future Routes */}
-        {/* <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} /> */}
-        {/* <Route path="/skills" element={<ProtectedRoute><Skills /></ProtectedRoute>} /> */}
-        {/* <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} /> */}
-        {/* <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} /> */}
-        {/* <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} /> */}
       </Routes>
     </BrowserRouter>
   );

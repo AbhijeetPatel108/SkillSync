@@ -20,7 +20,10 @@ function ReviewForm({ onSubmit }) {
 
       <div className="mb-5">
         <p className="mb-2 text-sm font-medium text-slate-300">Rating</p>
-        <RatingStars rating={rating} editable onChange={setRating} />
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+          <RatingStars rating={rating} editable onChange={setRating} />
+          <span className="text-sm font-semibold text-amber-200">{rating}/5</span>
+        </div>
       </div>
 
       <div className="mb-6">

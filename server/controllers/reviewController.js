@@ -1,30 +1,4 @@
-/**
- * server/controllers/reviewController.js
- *
- * All business logic for the review and rating system.
- *
- * MVC role: CONTROLLER
- * Every function receives an authenticated request (req.user is always set
- * by the protect middleware), enforces business rules, and returns JSON.
- *
- * Express 5: async errors thrown here reach errorHandler automatically.
- * No try/catch anywhere in this file.
- *
- * Reused from existing codebase (nothing reimplemented):
- *   AppError       → utils/AppError.js
- *   getPagination  → utils/helpers.js
- *   buildMeta      → utils/helpers.js
- *   MATCH_STATUS   → config/constants.js
- *   protect        → middleware/authMiddleware.js  (applied in routes)
- *
- * ─── 6 endpoints ────────────────────────────────────────────────────────────
- *   createReview     POST   /api/reviews
- *   getUserReviews   GET    /api/reviews/user/:id
- *   getMyReviews     GET    /api/reviews/me
- *   getGivenReviews  GET    /api/reviews/given
- *   deleteReview     DELETE /api/reviews/:id
- *   getReviewById    GET    /api/reviews/:id
- */
+
 
 const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');

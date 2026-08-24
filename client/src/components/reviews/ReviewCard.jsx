@@ -8,7 +8,10 @@ function ReviewCard({ review }) {
           <h2 className="text-lg font-semibold text-white">{review.reviewer?.name}</h2>
           <p className="mt-1 text-sm text-slate-400">{new Date(review.createdAt).toLocaleDateString()}</p>
         </div>
-        <RatingStars rating={review.rating} />
+        <div className="flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-500/10 px-2.5 py-1.5">
+          <RatingStars rating={review.rating} />
+          <span className="text-sm font-semibold text-amber-200">{review.rating}.0</span>
+        </div>
       </div>
 
       <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-300">{review.comment}</p>

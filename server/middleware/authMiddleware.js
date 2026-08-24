@@ -1,30 +1,4 @@
-/**
- * server/middleware/authMiddleware.js
- *
- * REPLACES the scaffold from Module 1.
- *
- * Two middleware functions:
- *
- *  protect    — verifies a JWT and attaches the user to req.user
- *               Used on every private route
- *
- *  authorize  — checks that req.user has one of the required roles
- *               Always used AFTER protect
- *
- * How a private route is protected:
- *
- *   router.get('/me', protect, getMe)
- *
- *   1. Request arrives with  Authorization: Bearer <token>
- *   2. protect extracts and verifies the token
- *   3. protect fetches the user from DB and sets req.user
- *   4. next() passes control to getMe
- *   5. getMe reads req.user.id — no second DB call needed for the id
- *
- * Express 5 note:
- *   In Express 5, async errors thrown inside middleware are forwarded to
- *   the error handler automatically — no try/catch required.
- */
+
 
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
@@ -67,14 +41,14 @@ const protect = async (req, _res, next) => {
   next();
 };
 
-// ─── authorize ────────────────────────────────────────────────────────────────
-// A middleware factory: authorize('admin') returns a middleware function.
-// This lets us pass arguments (the allowed roles) to middleware inline.
-//
-// Usage:
-//   router.delete('/users/:id', protect, authorize('admin'), deleteUser)
-//
-// Always place AFTER protect — req.user must exist before we check its role.
+
+
+
+
+
+
+
+
 const authorize = (...roles) => (req, _res, next) => {
   if (!roles.includes(req.user.role)) {
     return next(

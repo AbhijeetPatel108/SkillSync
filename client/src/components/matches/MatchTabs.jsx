@@ -1,22 +1,3 @@
-/**
- * client/src/components/matches/MatchTabs.jsx
- *
- * Tab switcher for the Matches section.
- *
- * Renders three tabs — Received, Sent, Accepted — inside a pill-style
- * container that matches the dark theme used throughout SkillSync.
- *
- * The active tab gets a solid violet-600 background and white text.
- * Inactive tabs are muted (slate-400) and brighten on hover.
- *
- * Props:
- *   activeTab    {string}    — currently selected tab: 'received' | 'sent' | 'accepted'
- *   setActiveTab {function}  — called with the new tab string when a tab is clicked
- *
- * Usage:
- *   <MatchTabs activeTab={tab} setActiveTab={setTab} />
- */
-
 const TABS = [
   { id: 'received', label: 'Received' },
   { id: 'sent',     label: 'Sent'     },
@@ -28,6 +9,7 @@ const MatchTabs = ({ activeTab, setActiveTab }) => (
     {TABS.map(({ id, label }) => (
       <button
         key={id}
+        type="button"
         role="tab"
         aria-selected={activeTab === id}
         aria-controls={`tabpanel-${id}`}

@@ -4,9 +4,10 @@ function Pagination({ meta, onPageChange }) {
   return (
     <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
       <button
+        type="button"
         disabled={!meta.hasPrevPage}
         onClick={() => onPageChange(meta.page - 1)}
-        className="rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-violet-400/30 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Previous
       </button>
@@ -16,9 +17,10 @@ function Pagination({ meta, onPageChange }) {
       </span>
 
       <button
+        type="button"
         disabled={!meta.hasNextPage}
         onClick={() => onPageChange(meta.page + 1)}
-        className="rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-2 text-sm font-medium text-white transition hover:border-violet-400/30 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>

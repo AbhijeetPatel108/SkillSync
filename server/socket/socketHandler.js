@@ -10,7 +10,7 @@ const initSocketHandler = (io) => {
     const userName = socket.user.name;
 
     onlineUsers.set(userId, socket.id);
-    console.log(`🟢 [Socket] Connected: ${userName} (${userId})`);
+    
 
     socket.emit(CHAT_EVENTS.CONNECTED, {
       onlineUsers: Array.from(onlineUsers.keys()),
@@ -75,7 +75,7 @@ const initSocketHandler = (io) => {
           messages: recentMessages,
         });
 
-        console.log(`📬 [Socket] ${userName} joined room ${room}`);
+        
       } catch (err) {
         console.error('[Socket] join_room error:', err.message);
         socket.emit(CHAT_EVENTS.ERROR, { message: 'Failed to join room' });
@@ -148,7 +148,7 @@ const initSocketHandler = (io) => {
           [result.insertId, userId]
         );
 
-        console.log(`💬 [Socket] Message in ${room} from ${userName}: "${trimmed.substring(0, 30)}..."`);
+        
       } catch (err) {
         console.error('[Socket] send_message error:', err.message);
         socket.emit(CHAT_EVENTS.ERROR, { message: 'Failed to send message' });
@@ -187,7 +187,7 @@ const initSocketHandler = (io) => {
 
     socket.on('disconnect', (reason) => {
       onlineUsers.delete(userId);
-      console.log(`🔴 [Socket] Disconnected: ${userName} (${userId}) — ${reason}`);
+      
       socket.broadcast.emit(CHAT_EVENTS.USER_OFFLINE, { userId });
     });
   });

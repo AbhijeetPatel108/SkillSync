@@ -11,10 +11,12 @@ function Matches() {
   const [activeTab, setActiveTab] = useState("received");
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const loadMatches = async () => {
     try {
       setLoading(true);
+      setError("");
 
       let res;
 
@@ -34,7 +36,7 @@ function Matches() {
 
       setMatches(data);
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.message || "Unable to load your matches right now.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,13 @@ function Matches() {
           <MatchTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
           {loading ? (
-            <div className="mt-12 rounded-[24px] border border-white/10 bg-slate-800/60 p-10 text-center text-slate-300">Loading your matches...</div>
+            <div className="mt-12 rounded-[24px] border border-white/10 bg-slate-800/60 p-10 text-center text-slate-300">
+              Loading your matches...
+            </div>
+          ) : error ? (
+            <div className="mt-12 rounded-[24px] border border-rose-500/30 bg-rose-500/10 p-10 text-center text-rose-200">
+              {error}
+            </div>
           ) : matches.length === 0 ? (
             <div className="mt-8">
               <EmptyMatches title="No Matches" message={`No ${activeTab} matches found.`} />
@@ -83,7 +91,7 @@ function Matches() {
           ) : (
             <div className="mt-8 grid gap-6 md:grid-cols-2">
               {matches.map((match) => (
-                <MatchCard key={match._id} match={match} onAccept={accept} onReject={reject} onCancel={cancel} />
+                <MatchCard key={match._id || match.id} match={match} onAccept={accept} onReject={reject} onCancel={cancel} />
               ))}
             </div>
           )}

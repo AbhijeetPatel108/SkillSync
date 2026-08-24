@@ -1,10 +1,6 @@
-/**
- * server/middleware/errorHandler.js
- *
- * Global Express error handler adapted for MySQL errors.
- */
 
-// eslint-disable-next-line no-unused-vars
+
+
 const errorHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';

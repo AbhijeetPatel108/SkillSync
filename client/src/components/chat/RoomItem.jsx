@@ -1,6 +1,7 @@
 function RoomItem({ room, selected, onClick }) {
   return (
     <button
+      type="button"
       onClick={() => onClick(room)}
       className={`w-full rounded-[20px] border p-3 text-left transition-all duration-200 ${selected ? "border-violet-400/30 bg-violet-500/10" : "border-transparent bg-transparent hover:border-white/10 hover:bg-slate-800/70"}`}
     >

@@ -30,7 +30,7 @@ const authService = {
     try {
       await axios.post("/auth/logout");
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
 
     localStorage.removeItem("token");

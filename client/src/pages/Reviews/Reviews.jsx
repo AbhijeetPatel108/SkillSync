@@ -11,15 +11,16 @@ function Reviews() {
   const matchId = location.state?.matchId;
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const loadReviews = async () => {
     try {
       setLoading(true);
+      setError("");
       const res = await reviewService.getReviews(userId);
       setReviews(res.reviews || []);
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Failed to load reviews");
+      setError(err.response?.data?.message || "Failed to load reviews");
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,6 @@ function Reviews() {
       alert("Review submitted successfully!");
       loadReviews();
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || "Failed to submit review");
     }
   };
@@ -64,9 +64,17 @@ function Reviews() {
 
             <div>
               {loading ? (
-                <div className="rounded-[24px] border border-white/10 bg-slate-800/60 p-10 text-center text-slate-300">Loading reviews...</div>
+                <div className="rounded-[24px] border border-white/10 bg-slate-800/60 p-10 text-center text-slate-300">
+                  Loading reviews...
+                </div>
+              ) : error ? (
+                <div className="rounded-[24px] border border-rose-500/30 bg-rose-500/10 p-10 text-center text-rose-200">
+                  {error}
+                </div>
               ) : reviews.length === 0 ? (
-                <div className="rounded-[24px] border border-dashed border-slate-700 bg-slate-800/50 p-10 text-center text-slate-400">No reviews yet.</div>
+                <div className="rounded-[24px] border border-dashed border-slate-700 bg-slate-800/50 p-10 text-center text-slate-400">
+                  No reviews yet.
+                </div>
               ) : (
                 <div className="space-y-4">
                   {reviews.map((review) => (
