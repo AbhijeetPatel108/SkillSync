@@ -1,16 +1,118 @@
-import MainLayout from "../../layouts/MainLayout";
+import {
+  FiBookOpen,
+  FiUsers,
+  FiStar,
+  FiMessageCircle,
+  FiArrowRight,
+  FiUser,
+} from "react-icons/fi";
+
+import { useNavigate } from "react-router-dom";
+
+import ActivityCard from "../../components/dashboard/ActivityCard";
+import StatCard from "../../components/dashboard/StatCard";
+import WelcomeBanner from "../../components/dashboard/WelcomeBanner";
 
 function Dashboard() {
-  return (
-    <MainLayout>
-      <h1 className="text-4xl font-bold">
-        Welcome Back 👋
-      </h1>
+  const navigate = useNavigate();
 
-      <p className="text-slate-400 mt-2">
-        This is your SkillSync dashboard.
-      </p>
-    </MainLayout>
+  const activities = [
+    {
+      title: "Alex accepted your match request",
+      time: "2 minutes ago",
+      icon: "🤝",
+    },
+    {
+      title: "Sarah reviewed your profile",
+      time: "1 hour ago",
+      icon: "⭐",
+    },
+    {
+      title: "New chat message received",
+      time: "Today",
+      icon: "💬",
+    },
+  ];
+
+  const actions = [
+    {
+      title: "Browse Skills",
+      icon: <FiBookOpen size={20} />,
+      path: "/skills",
+    },
+    {
+      title: "View Matches",
+      icon: <FiUsers size={20} />,
+      path: "/matches",
+    },
+    {
+      title: "Messages",
+      icon: <FiMessageCircle size={20} />,
+      path: "/messages",
+    },
+    {
+      title: "My Profile",
+      icon: <FiUser size={20} />,
+      path: "/profile",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-7xl">
+        <WelcomeBanner />
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard title="My Skills" value={12} color="text-violet-300" icon={<FiBookOpen />} subtitle="+3 this week" accent="from-violet-500/20 to-violet-500/5" />
+          <StatCard title="Matches" value={8} color="text-emerald-300" icon={<FiUsers />} subtitle="+2 today" accent="from-emerald-500/20 to-emerald-500/5" />
+          <StatCard title="Reviews" value={19} color="text-amber-300" icon={<FiStar />} subtitle="4.9 Rating" accent="from-amber-500/20 to-amber-500/5" />
+          <StatCard title="Messages" value={34} color="text-pink-300" icon={<FiMessageCircle />} subtitle="5 unread" accent="from-pink-500/20 to-pink-500/5" />
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.45fr_0.85fr]">
+          <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-5 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-violet-300">Activity</p>
+                <h2 className="mt-1 text-2xl font-semibold text-white">Recent Activity</h2>
+              </div>
+              <button className="flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20">
+                View All
+                <FiArrowRight />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {activities.map((activity, index) => (
+                <ActivityCard key={index} activity={activity} />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-5 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6">
+            <div className="mb-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-violet-300">Quick start</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">Quick Actions</h2>
+            </div>
+
+            <div className="space-y-3">
+              {actions.map((action) => (
+                <button
+                  key={action.title}
+                  onClick={() => navigate(action.path)}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-400/30 hover:bg-slate-800"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-200">
+                    {action.icon}
+                  </div>
+                  <span className="font-medium text-white">{action.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

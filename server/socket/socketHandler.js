@@ -1,50 +1,8 @@
-/**
- * server/socket/socketHandler.js
- *
- * All Socket.IO real-time event logic for the SkillSync chat system.
- *
- * ─── Responsibilities ────────────────────────────────────────────────────────
- *
- *  join_room          → Verify participation, join Socket.IO room, send history
- *  send_message       → Validate, persist to MongoDB, broadcast to room
- *  typing_start/stop  → Broadcast typing indicator to the other user
- *  mark_read          → Mark messages as read in DB, no broadcast needed
- *  disconnect         → Remove from online map, broadcast offline to rooms
- *
- * ─── Room naming convention ──────────────────────────────────────────────────
- *
- * Socket.IO rooms are named after the matchId:  "chat:64f3a..."
- * The "chat:" prefix prevents collision with any other room names.
- *
- * ─── Online presence map ─────────────────────────────────────────────────────
- *
- * onlineUsers: Map<userId string, socketId string>
- *
- * Stored in process memory (not Redis) — acceptable for a single Node.js process.
- * For horizontal scaling (multiple servers), replace with Redis adapter.
- * This is noted as a production consideration in the interview section.
- *
- * ─── Error handling pattern ───────────────────────────────────────────────────
- *
- * Socket events cannot use Express errorHandler. Instead:
- *   - Each handler wraps its body in try/catch
- *   - Errors emit CHAT_EVENTS.ERROR back to the sender only
- *   - The error payload is { message: '...' } — consistent with HTTP responses
- *
- * MVC role: this is the CONTROLLER layer for WebSocket events.
- */
 
 const Match   = require('../models/Match');
 const Message = require('../models/Message');
 const { MATCH_STATUS, CHAT_EVENTS, MESSAGE_MAX_LENGTH } = require('../config/constants');
 
-// ─── Online presence map ──────────────────────────────────────────────────────
-// Maps userId (string) → socketId (string).
-// Used to check if a user is currently connected and to broadcast presence.
-//
-// NOTE: This is process-local memory. In a production deployment with PM2
-// cluster mode or multiple Heroku/Render dynos, each process has its own map.
-// The production solution is the Socket.IO Redis adapter + a shared Redis store.
 const onlineUsers = new Map();
 
 // ─── Room name helper ─────────────────────────────────────────────────────────
@@ -78,13 +36,6 @@ const initSocketHandler = (io) => {
 
     // Broadcast to everyone else that this user came online.
     socket.broadcast.emit(CHAT_EVENTS.USER_ONLINE, { userId });
-
-    // ── join_room ─────────────────────────────────────────────────────────────
-    // Client sends:  { matchId: string }
-    // Server joins the socket to the room, confirms, sends last 20 messages.
-    //
-    // Authorization: the logged-in user must be sender OR receiver of the match,
-    // AND the match must be accepted. Same pattern as matchController.getMatchById.
     socket.on(CHAT_EVENTS.JOIN_ROOM, async ({ matchId } = {}) => {
       try {
         if (!matchId) {
@@ -140,11 +91,6 @@ const initSocketHandler = (io) => {
       }
     });
 
-    // ── send_message ──────────────────────────────────────────────────────────
-    // Client sends:  { matchId: string, content: string }
-    // Server saves to DB, broadcasts new_message to the ENTIRE room
-    // (both sender and receiver), including the sender so their UI confirms
-    // the message was persisted (with the real _id and createdAt).
     socket.on(CHAT_EVENTS.SEND_MESSAGE, async ({ matchId, content } = {}) => {
       try {
         // ── Validate inputs ─────────────────────────────────────────────────

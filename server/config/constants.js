@@ -1,21 +1,3 @@
-/**
- * server/config/constants.js
- *
- * All "magic numbers" and shared configuration values live here.
- *
- * Rule: if a value appears in more than one file, it belongs here.
- *
- * Benefits:
- *  - Change JWT expiry from '7d' to '30d'? One line, one file.
- *  - Need the skill categories in both a model AND a validator?
- *    Import from here — no duplication, no drift.
- *
- * MODULE 7 ADDITIONS:
- *  - MESSAGE_MAX_LENGTH  — cap on chat message content
- *  - CHAT_EVENTS         — every Socket.IO event name in one place
- *                          so typos in event strings are caught at import,
- *                          not silently at runtime.
- */
 
 module.exports = {
 

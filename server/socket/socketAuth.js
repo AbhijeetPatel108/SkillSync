@@ -1,40 +1,4 @@
-/**
- * server/socket/socketAuth.js
- *
- * JWT authentication middleware for Socket.IO connections.
- *
- * ─── Why not reuse the existing protect middleware from authMiddleware.js? ────
- *
- * The existing `protect` is an Express middleware with signature (req, res, next).
- * Socket.IO middleware has a completely different signature: (socket, next).
- * There is no `req.headers` — the token arrives in socket.handshake.auth.token.
- *
- * However, the LOGIC is identical:
- *   1. Extract JWT from the handshake
- *   2. jwt.verify(token, secret)
- *   3. User.findById(decoded.id)
- *   4. Attach user to socket.user (analogous to req.user in Express)
- *
- * We intentionally duplicate the logic rather than trying to adapt the Express
- * middleware — keeping each layer clean and framework-appropriate.
- *
- * ─── How the client sends the token ─────────────────────────────────────────
- *
- * The Socket.IO client sends the token in the auth handshake option:
- *
- *   const socket = io('http://localhost:5000', {
- *     auth: { token: 'eyJhbGci...' }
- *   });
- *
- * This is the Socket.IO-recommended approach (not cookies, not query strings).
- * It avoids logging tokens in server access logs (which query strings do).
- *
- * ─── On failure ──────────────────────────────────────────────────────────────
- *
- * Calling next(new Error('message')) rejects the connection.
- * The client receives a `connect_error` event with error.message set.
- * The socket is never added to the connected pool.
- */
+
 
 const jwt  = require('jsonwebtoken');
 const User = require('../models/User');

@@ -1,31 +1,3 @@
-/**
- * server/controllers/matchController.js
- *
- * All business logic for the match request system.
- *
- * MVC role: CONTROLLER — sits between routes and models.
- * Receives authenticated requests (req.user is always set by protect),
- * enforces business rules, talks to Match + User models, sends JSON.
- *
- * Express 5: async errors thrown here are forwarded to errorHandler
- * automatically — no try/catch anywhere in this file.
- *
- * Reused from existing codebase:
- *   AppError         → utils/AppError.js
- *   getPagination    → utils/helpers.js
- *   buildMeta        → utils/helpers.js
- *   MATCH_STATUS     → config/constants.js
- *
- * ─── 8 endpoints handled ────────────────────────────────────────────────────
- *   sendRequest       POST   /api/matches
- *   acceptRequest     PATCH  /api/matches/:id/accept
- *   rejectRequest     PATCH  /api/matches/:id/reject
- *   cancelRequest     PATCH  /api/matches/:id/cancel
- *   getSentRequests   GET    /api/matches/sent
- *   getReceivedRequests GET  /api/matches/received
- *   getAcceptedMatches  GET  /api/matches/accepted
- *   getMatchById      GET    /api/matches/:id
- */
 
 const Match    = require('../models/Match');
 const User     = require('../models/User');
@@ -308,7 +280,10 @@ const getSentRequests = async (req, res) => {
   const { status } = req.query;
 
   // ── Build filter ──────────────────────────────────────────────────────────
-  const filter = { sender: req.user.id };
+ const filter = {
+  sender: req.user.id,
+  status: status || MATCH_STATUS.PENDING,
+};
 
   if (status) {
     // Validate the status value before it touches the DB
@@ -327,7 +302,8 @@ const getSentRequests = async (req, res) => {
   const [total, matches] = await Promise.all([
     Match.countDocuments(filter),
     Match.find(filter)
-      .populate('receiver', USER_PUBLIC_FIELDS)  // show who was sent to
+     .populate("sender", USER_PUBLIC_FIELDS)
+     .populate("receiver", USER_PUBLIC_FIELDS)  // show who was sent to
       .sort({ createdAt: -1 })                   // newest first
       .skip(skip)
       .limit(limit),
@@ -351,16 +327,19 @@ const getSentRequests = async (req, res) => {
 const getReceivedRequests = async (req, res) => {
   const { status } = req.query;
 
-  const filter = { receiver: req.user.id };
+  const filter = {
+    receiver: req.user.id,
+    status: status || MATCH_STATUS.PENDING,
+  };
 
-  if (status) {
-    if (!Object.values(MATCH_STATUS).includes(status)) {
-      throw new AppError(
-        `Invalid status. Valid values: ${Object.values(MATCH_STATUS).join(', ')}`,
-        400
-      );
-    }
-    filter.status = status;
+  if (
+    status &&
+    !Object.values(MATCH_STATUS).includes(status)
+  ) {
+    throw new AppError(
+      `Invalid status. Valid values: ${Object.values(MATCH_STATUS).join(", ")}`,
+      400
+    );
   }
 
   const { page, limit, skip } = getPagination(req.query);
@@ -368,7 +347,8 @@ const getReceivedRequests = async (req, res) => {
   const [total, matches] = await Promise.all([
     Match.countDocuments(filter),
     Match.find(filter)
-      .populate('sender', USER_PUBLIC_FIELDS)   // show who sent the request
+      .populate("sender", USER_PUBLIC_FIELDS)
+      .populate("receiver", USER_PUBLIC_FIELDS)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),
@@ -376,7 +356,7 @@ const getReceivedRequests = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    meta:    buildMeta(total, page, limit),
+    meta: buildMeta(total, page, limit),
     matches,
   });
 };

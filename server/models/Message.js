@@ -1,29 +1,3 @@
-/**
- * server/models/Message.js
- *
- * The Message schema — one document per chat message sent between
- * two matched users.
- *
- * ─── Design decisions ────────────────────────────────────────────────────────
- *
- * 1. Tied to a Match, not to a "Conversation" collection.
- *    Each accepted match IS the conversation. We do not need a separate
- *    Conversation model — the Match document already stores both participants
- *    and its matchId becomes the room identifier for Socket.IO.
- *
- *    matchId → room name in Socket.IO AND the query key for message history.
- *
- * 2. readBy array instead of a single boolean.
- *    A boolean `isRead` only works for 1-to-1. The readBy array is correct for
- *    group chats if SkillSync ever expands, and it lets us compute unread counts
- *    per user with a single MongoDB query instead of two.
- *
- * 3. Soft content: stored as plain text.
- *    No markdown rendering, no HTML — prevents XSS from the database layer.
- *    The frontend is responsible for rendering decisions.
- *
- * MVC role: MODEL layer.
- */
 
 const mongoose           = require('mongoose');
 const { MESSAGE_MAX_LENGTH } = require('../config/constants');
