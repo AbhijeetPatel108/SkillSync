@@ -1,10 +1,8 @@
-
 const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { getPagination, buildMeta } = require('../utils/helpers');
 const { MATCH_STATUS } = require('../config/constants');
 const { fetchUsersPublicMap } = require('../utils/userSql');
-
 const normalizePublicUser = (user) => ({
   id: Number(user.id),
   name: user.name,

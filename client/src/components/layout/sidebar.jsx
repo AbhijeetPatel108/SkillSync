@@ -13,7 +13,7 @@ const menu = [
 ];
 
 function Sidebar() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -26,8 +26,8 @@ function Sidebar() {
   };
 
   return (
-    <aside className="w-full border-b border-white/10 bg-slate-900/80 p-4 backdrop-blur-xl lg:w-72 lg:border-b-0 lg:border-r lg:p-6">
-      <div className="rounded-[24px] border border-white/10 bg-slate-800/70 p-4 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.7)]">
+    <aside className="w-full border-b border-white/10 bg-[#0e111b]/90 p-4 backdrop-blur-xl lg:w-72 lg:border-b-0 lg:border-r lg:p-6">
+      <div className="rounded-2xl border border-white/10 bg-slate-900/65 p-4 shadow-[0_20px_60px_-24px_rgba(0,0,0,0.7)]">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#8b5cf6] text-lg font-semibold text-white shadow-lg shadow-violet-950/30">
             S
@@ -38,13 +38,13 @@ function Sidebar() {
           </div>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1.5">
           {menu.map((item) => (
             <NavLink
-              key={item.to}
-              to={item.to}
+              key={item.label}
+              to={item.label === "Reviews" ? `/reviews/${user?._id || user?.id}` : item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                  `flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? "bg-violet-600/20 text-violet-200 shadow-inner shadow-violet-950/20"
                     : "text-slate-300 hover:bg-slate-700 hover:text-white"
@@ -56,6 +56,18 @@ function Sidebar() {
             </NavLink>
           ))}
         </nav>
+
+        <div className="my-5 border-t border-white/10" />
+
+        <div className="flex items-center gap-3 rounded-xl bg-slate-950/35 px-3 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-sm font-semibold text-violet-200">
+            {user?.name?.charAt(0).toUpperCase() || "U"}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">{user?.name || "Your profile"}</p>
+            <p className="text-xs text-slate-500">Personal workspace</p>
+          </div>
+        </div>
 
         <button
           className="mt-6 flex w-full items-center gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-300 transition hover:bg-rose-500/20"

@@ -25,13 +25,19 @@ function SkillCard({ user, onSendRequest }) {
 
       <div className="mt-5 flex-1">
         <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-300">Skills offered</h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="space-y-2">
           {user.skillsOffered?.map((skill, index) => (
-            <span key={skill.id || skill._id || index} className="rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-sm text-violet-200">
-              {skill.name}
-            </span>
+            <div key={skill.id || skill._id || index} className="rounded-xl border border-violet-400/15 bg-violet-500/10 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-violet-100">{skill.name}</span>
+                <span className="text-xs text-violet-200/70">{skill.category} · {skill.level}</span>
+              </div>
+              {skill.description && <p className="mt-1 text-xs leading-5 text-slate-300">{skill.description}</p>}
+            </div>
           ))}
         </div>
+        {user.skillsWanted?.length > 0 && <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Also wants to learn</p>}
+        {user.skillsWanted?.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{user.skillsWanted.slice(0, 3).map((skill, index) => <span key={skill.id || skill._id || index} className="rounded-full border border-emerald-400/15 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">{skill.name}</span>)}</div>}
       </div>
 
       <button

@@ -105,7 +105,7 @@ function Chat() {
   };
 
   return (
-    <div className="h-screen bg-slate-900 flex">
+    <div className="flex min-h-[calc(100vh-76px)] flex-col bg-slate-950 lg:flex-row">
       <ChatSidebar
         rooms={rooms}
         selectedRoom={selectedRoom}

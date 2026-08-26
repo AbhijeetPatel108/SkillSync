@@ -1,9 +1,7 @@
 const { pool } = require('../config/db');
 const { MATCH_STATUS, CHAT_EVENTS, MESSAGE_MAX_LENGTH } = require('../config/constants');
-
 const onlineUsers = new Map();
 const roomName = (matchId) => `chat:${matchId}`;
-
 const initSocketHandler = (io) => {
   io.on('connection', (socket) => {
     const userId = String(socket.user.id);

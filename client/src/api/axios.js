@@ -6,7 +6,6 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
-
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -19,7 +18,6 @@ axiosInstance.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -11,7 +11,7 @@ function ChatWindow({ room, messages, currentUser, onSend }) {
   }, [messages]);
 
   return (
-    <div className="flex flex-1 flex-col bg-slate-900/70">
+    <div className="flex min-h-[58vh] flex-1 flex-col bg-slate-900/70 lg:min-h-[calc(100vh-76px)]">
       <div className="flex items-center justify-between border-b border-white/10 bg-slate-800/70 px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#8b5cf6] text-lg font-semibold text-white">
@@ -24,7 +24,7 @@ function ChatWindow({ room, messages, currentUser, onSend }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         {messages.length === 0 ? (
           <div className="mt-20 text-center text-sm text-slate-400">No messages yet.</div>
         ) : (

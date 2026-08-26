@@ -1,30 +1,13 @@
-
-
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
-
-
-
-
-
-
-
-
-
-
-
-
 const signToken = (userId) =>
   jwt.sign(
     { id: userId },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
-
-
-
 const sendAuthResponse = (user, statusCode, res) => {
   const userId = user.id ?? user._id;
   const token = signToken(userId);
@@ -41,16 +24,8 @@ const sendAuthResponse = (user, statusCode, res) => {
     },
   });
 };
-
-
-
-
 const register = async (req, res) => {
   const { name, email, password } = req.body;
-
-  
-  
-  
   if (!name || !email || !password) {
     throw new AppError('Name, email and password are required', 400);
   }
@@ -68,9 +43,6 @@ const register = async (req, res) => {
     throw new AppError('Password must be at least 8 characters', 400);
   }
 
-  
-  
-  
   const normalizedEmail = email.toLowerCase().trim();
   const [existingRows] = await pool.execute(
     'SELECT id FROM users WHERE email = ? LIMIT 1',
@@ -96,20 +68,12 @@ const register = async (req, res) => {
   sendAuthResponse(user, 201, res);
 };
 
-
-
-
 const login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     throw new AppError('Email and password are required', 400);
   }
-
-  
-  
-  
-  
   const normalizedEmail = email.toLowerCase().trim();
   const [userRows] = await pool.execute(
     'SELECT * FROM users WHERE email = ? LIMIT 1',
@@ -140,13 +104,7 @@ const login = async (req, res) => {
   sendAuthResponse(refreshedUser, 200, res);
 };
 
-
-
-
 const getMe = async (req, res) => {
-  
-  
-  
   const [userRows] = await pool.execute(
     'SELECT id, name, email, avatar, role FROM users WHERE id = ? LIMIT 1',
     [req.user.id]
@@ -168,17 +126,7 @@ const getMe = async (req, res) => {
     },
   });
 };
-
-
-
-
 const logout = (_req, res) => {
-  
-  
-  
-  
-  
-  
   res.status(200).json({
     success: true,
     message: 'Logged out successfully',

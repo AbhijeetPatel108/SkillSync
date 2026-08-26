@@ -15,7 +15,7 @@ function ReviewForm({ onSubmit }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[24px] border border-white/10 bg-slate-900/70 p-6 shadow-[0_20px_70px_-34px_rgba(0,0,0,0.95)]">
+    <form onSubmit={handleSubmit} className="surface p-6">
       <h2 className="mb-6 text-xl font-semibold text-white">Write a Review</h2>
 
       <div className="mb-5">
@@ -33,7 +33,7 @@ function ReviewForm({ onSubmit }) {
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Share your experience..."
-          className="w-full resize-none rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-white outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+          className="control w-full resize-none p-3 text-white outline-none transition"
         />
       </div>
 

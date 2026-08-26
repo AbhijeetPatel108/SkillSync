@@ -1,13 +1,8 @@
-
-
 const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { pick } = require('../utils/helpers');
 const { SKILL_CATEGORIES, SKILL_LEVELS } = require('../config/constants');
 const { fetchUserProfile } = require('../utils/userSql');
-
-
-
 
 const parseAndValidateSkill = (body) => {
   const { name, category, level, description } = body;
@@ -36,7 +31,6 @@ const parseAndValidateSkill = (body) => {
   if (description && description.length > 200) {
     throw new AppError('Description cannot exceed 200 characters', 400);
   }
-
   return {
     name:        name.trim(),
     category,
@@ -44,21 +38,13 @@ const parseAndValidateSkill = (body) => {
     description: description ? description.trim() : '',
   };
 };
-
-
 const isDuplicateSkill = (skillsArray, skillName) =>
   skillsArray.some(
     (s) => s.name.toLowerCase() === skillName.toLowerCase()
   );
 
-
-
-
 const getMyProfile = async (req, res) => {
-  
-  
-  
-  const user = await fetchUserProfile(req.user.id, true);
+   const user = await fetchUserProfile(req.user.id, true);
 
   if (!user) {
     throw new AppError('User not found', 404);
@@ -75,10 +61,6 @@ const getMyProfile = async (req, res) => {
     },
   });
 };
-
-
-
-
 
 const getUserById = async (req, res) => {
   const user = await fetchUserProfile(req.params.id, false);
@@ -103,19 +85,10 @@ const getUserById = async (req, res) => {
     },
   });
 };
-
-
-
-
-
 const updateProfile = async (req, res) => {
-  
-  
-  
   const allowedFields = ['name', 'bio', 'location', 'avatar'];
   const updates = pick(req.body, allowedFields);
 
-  
   if (Object.keys(updates).length === 0) {
     throw new AppError(
       `Nothing to update. Allowed fields: ${allowedFields.join(', ')}`,
@@ -148,10 +121,6 @@ const updateProfile = async (req, res) => {
       throw new AppError('Avatar must be a valid URL', 400);
     }
   }
-
-  
-  
-  
   const fields = [];
   const values = [];
 
@@ -171,17 +140,14 @@ const updateProfile = async (req, res) => {
     fields.push('avatar = ?');
     values.push(updates.avatar);
   }
-
   if (!fields.length) {
     throw new AppError('Nothing to update. Allowed fields: name, bio, location, avatar', 400);
   }
-
   values.push(req.user.id);
   await pool.execute(
     `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
     values
   );
-
   const user = await fetchUserProfile(req.user.id, true);
 
   res.status(200).json({
@@ -196,10 +162,6 @@ const updateProfile = async (req, res) => {
     },
   });
 };
-
-
-
-
 const addOfferedSkill = async (req, res) => {
   const skill = parseAndValidateSkill(req.body);
 
@@ -240,10 +202,6 @@ const addOfferedSkill = async (req, res) => {
     })),
   });
 };
-
-
-
-
 const removeOfferedSkill = async (req, res) => {
   const skillName = req.params.skillName.trim();
 
@@ -276,9 +234,6 @@ const removeOfferedSkill = async (req, res) => {
     })),
   });
 };
-
-
-
 
 const addWantedSkill = async (req, res) => {
   const skill = parseAndValidateSkill(req.body);
@@ -320,10 +275,6 @@ const addWantedSkill = async (req, res) => {
     })),
   });
 };
-
-
-
-
 const removeWantedSkill = async (req, res) => {
   const skillName = req.params.skillName.trim();
 

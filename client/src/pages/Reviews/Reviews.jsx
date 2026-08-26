@@ -47,16 +47,15 @@ function Reviews() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl">
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/70 p-6 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-8">
-          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div className="page-container">
+      <div className="page-panel p-5 sm:p-8">
+          <div className="page-header">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-violet-300">Community</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Reviews</h1>
-              <p className="mt-2 text-sm leading-7 text-slate-400">Share feedback and keep the SkillSync experience trustworthy for everyone.</p>
+              <p className="page-eyebrow">Community</p>
+              <h1 className="page-title">Reviews</h1>
+              <p className="page-subtitle">Share feedback and keep the SkillSync experience trustworthy for everyone.</p>
             </div>
-            <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">Your reputation matters.</div>
+            <div className="surface w-fit px-4 py-3 text-sm text-violet-200">Your reputation matters.</div>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
@@ -86,7 +85,6 @@ function Reviews() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

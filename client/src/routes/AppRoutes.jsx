@@ -9,6 +9,15 @@ import ProtectedRoute from "./ProtectedRoute";
 import Matches from "../pages/Matches/Matches";
 import Reviews from "../pages/Reviews/Reviews";
 import Chat from "../pages/Chat/Chat";
+import MainLayout from "../layouts/MainLayout";
+
+function ProtectedPage({ children }) {
+  return (
+    <ProtectedRoute>
+      <MainLayout>{children}</MainLayout>
+    </ProtectedRoute>
+  );
+}
 
 function AppRoutes() {
   return (
@@ -20,57 +29,57 @@ function AppRoutes() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Dashboard />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route
           path="/skills"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Skills />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route
           path="/profile"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Profile />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route
           path="/profile/edit"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <EditProfile />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route
           path="/matches"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Matches />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route
           path="/reviews/:userId"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Reviews />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route
           path="/messages"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Chat />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

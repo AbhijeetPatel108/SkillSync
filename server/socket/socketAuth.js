@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
-
 const socketAuth = async (socket, next) => {
   const token =
     socket.handshake.auth?.token ||
@@ -30,7 +29,6 @@ const socketAuth = async (socket, next) => {
   if (!user) {
     return next(new Error('The account for this token no longer exists.'));
   }
-
   socket.user = {
     ...user,
     id: Number(user.id),
@@ -39,5 +37,4 @@ const socketAuth = async (socket, next) => {
 
   next();
 };
-
 module.exports = socketAuth;

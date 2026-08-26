@@ -6,6 +6,8 @@ import SkillCard from "../../components/skills/SkillCard";
 import SearchBar from "../../components/skills/SearchBar";
 import FilterBar from "../../components/skills/FilterBar";
 import Pagination from "../../components/skills/Pagination";
+import SkillManager from "../../components/skills/SkillManager";
+import userService from "../../services/userService";
 
 function Skills() {
   const [users, setUsers] = useState([]);
@@ -16,12 +18,18 @@ function Skills() {
   const [category, setCategory] = useState("");
   const [level, setLevel] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("newest");
+  const [userName, setUserName] = useState("");
+  const [location, setLocation] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState("");
 
   const fetchSkills = async () => {
     try {
       setLoading(true);
       setError("");
-      const res = await skillService.getSkills({ search, category, level, page, limit: 8 });
+      const res = await skillService.getSkills({ search, userName, category, level, location, sort, page, limit: 8 });
       setUsers(res.users);
       setMeta(res.meta);
     } catch (err) {
@@ -41,31 +49,60 @@ function Skills() {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      const res = await userService.getMyProfile();
+      setProfile(res.user);
+    } catch (err) {
+      setProfileError(err.response?.data?.message || "Unable to load your skill profile.");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchSkills();
-  }, [search, category, level, page]);
+  }, [search, userName, category, level, location, sort, page]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl">
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/70 p-6 shadow-[0_20px_70px_-30px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-8">
-          <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-violet-300">Discover</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Find your next skill exchange</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">Search by expertise, filter by category, and connect with collaborators who match your learning goals.</p>
+    <div className="page-container">
+      <div className="page-panel p-5 sm:p-8">
+          {profileLoading ? (
+            <div className="mb-8 rounded-2xl border border-white/10 bg-slate-950/30 p-6 text-sm text-slate-400">Loading your skill profile...</div>
+          ) : profileError ? (
+            <div className="mb-8 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-200">{profileError}</div>
+          ) : (
+            <div className="mb-8">
+              <SkillManager user={profile} onRefresh={fetchProfile} />
             </div>
-            <div className="inline-flex w-fit rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-200">Explore curated talent with real-world expertise.</div>
+          )}
+          <div className="page-header">
+            <div>
+              <p className="page-eyebrow">Discover</p>
+              <h1 className="page-title">Find your next skill exchange</h1>
+              <p className="page-subtitle">Search by expertise, filter by category, and connect with collaborators who match your learning goals.</p>
+            </div>
+            <div className="surface w-fit px-4 py-3 text-sm text-violet-200">Explore curated talent with real-world expertise.</div>
           </div>
 
-          <div className="rounded-[26px] border border-white/10 bg-slate-950/40 p-4 sm:p-5">
+          <div className="surface p-4 sm:p-5">
             <div className="space-y-4">
               <SearchBar value={search} onChange={(value) => { setPage(1); setSearch(value); }} />
               <FilterBar
                 category={category}
                 level={level}
+                sort={sort}
+                userName={userName}
+                location={location}
                 onCategoryChange={(value) => { setPage(1); setCategory(value); }}
                 onLevelChange={(value) => { setPage(1); setLevel(value); }}
+                onSortChange={(value) => { setPage(1); setSort(value); }}
+                onUserNameChange={(value) => { setPage(1); setUserName(value); }}
+                onLocationChange={(value) => { setPage(1); setLocation(value); }}
               />
             </div>
           </div>
@@ -94,7 +131,6 @@ function Skills() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 

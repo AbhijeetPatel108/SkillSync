@@ -1,27 +1,62 @@
 import { useState } from "react";
 import { FiPlus } from "react-icons/fi";
 
-function SkillForm({ onSubmit }) {
+const categories = [
+  "Technology",
+  "Design",
+  "Business",
+  "Language",
+  "Music",
+  "Cooking",
+  "Fitness",
+  "Art",
+  "Writing",
+  "Other",
+];
+
+function SkillForm({
+  onSubmit,
+  title = "Expand your offering",
+  description = "Share a new skill and make it easier for others to discover your expertise.",
+  submitLabel = "Add Skill",
+  loading = false,
+  error = "",
+  onCancel,
+}) {
   const [form, setForm] = useState({
     name: "",
     category: "",
     level: "Beginner",
     description: "",
   });
+  const [validationError, setValidationError] = useState("");
 
   const handleChange = (e) => {
+    setValidationError("");
     setForm({
       ...form,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.category) return;
+    if (loading) return;
 
-    onSubmit(form);
+    if (!form.name.trim()) {
+      setValidationError("Enter a skill name before saving.");
+      return;
+    }
+
+    if (!form.category) {
+      setValidationError("Choose a category before saving.");
+      return;
+    }
+
+    const submitted = await onSubmit({ ...form, name: form.name.trim(), description: form.description.trim() });
+
+    if (submitted === false) return;
 
     setForm({
       name: "",
@@ -29,6 +64,7 @@ function SkillForm({ onSubmit }) {
       level: "Beginner",
       description: "",
     });
+    setValidationError("");
   };
 
   return (
@@ -38,9 +74,11 @@ function SkillForm({ onSubmit }) {
           <FiPlus />
           <p className="text-[11px] font-medium uppercase tracking-[0.28em]">Add a skill</p>
         </div>
-        <h2 className="mt-2 text-2xl font-semibold text-white">Expand your offering</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-400">Share a new skill and make it easier for others to discover your expertise.</p>
+        <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
       </div>
+
+      {(validationError || error) && <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-200">{validationError || error}</div>}
 
       <div className="space-y-4">
         <div>
@@ -64,10 +102,7 @@ function SkillForm({ onSubmit }) {
             className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none transition duration-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
           >
             <option value="">Select category</option>
-            <option value="Technology">Technology</option>
-            <option value="Design">Design</option>
-            <option value="Business">Business</option>
-            <option value="Language">Language</option>
+            {categories.map((category) => <option key={category}>{category}</option>)}
           </select>
         </div>
 
@@ -98,10 +133,13 @@ function SkillForm({ onSubmit }) {
         </div>
       </div>
 
-      <button type="submit" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7C3AED] to-[#8b5cf6] py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:from-violet-600 hover:to-violet-500">
-        <FiPlus />
-        Add Skill
-      </button>
+      <div className="mt-6 flex gap-3">
+        {onCancel && <button type="button" onClick={onCancel} className="flex-1 rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 font-semibold text-slate-300 transition hover:bg-slate-700">Cancel</button>}
+        <button type="submit" disabled={loading} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7C3AED] to-[#8b5cf6] py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:from-violet-600 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-60">
+          <FiPlus />
+          {loading ? "Saving..." : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

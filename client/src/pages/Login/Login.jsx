@@ -40,8 +40,8 @@ function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.25),_transparent_35%),linear-gradient(135deg,_#020617_0%,_#0f172a_100%)] px-4 py-10">
-      <div className="w-full max-w-md overflow-hidden rounded-[30px] border border-white/10 bg-slate-900/80 shadow-[0_30px_100px_-20px_rgba(76,29,149,0.9)] backdrop-blur-xl">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.2),_transparent_35%),#080a12] px-4 py-10">
+      <div className="w-full max-w-[450px] overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-[0_30px_100px_-20px_rgba(76,29,149,0.7)] backdrop-blur-xl">
         <div className="bg-gradient-to-r from-[#7C3AED] via-[#8b5cf6] to-[#4338ca] px-6 py-7 text-center sm:px-8">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-white shadow-lg shadow-violet-900/20">
             <FiStar size={26} />
@@ -51,11 +51,13 @@ function Login() {
         </div>
 
         <div className="p-6 sm:p-8">
+          <div className="min-h-0">
           {error && (
-            <div className="mb-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            <div className="mb-5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm leading-6 text-rose-200">
               {error}
             </div>
           )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

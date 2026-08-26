@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const {
   sendRequest,
@@ -15,17 +13,13 @@ const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-
 router.use(protect);
-
 
 router.get('/sent',     getSentRequests);
 router.get('/received', getReceivedRequests);
 router.get('/accepted', getAcceptedMatches);
 
-
 router.post('/', sendRequest);
-
 
 router.get   ('/:id',        getMatchById);
 router.patch ('/:id/accept', acceptRequest);

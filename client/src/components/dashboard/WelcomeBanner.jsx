@@ -11,11 +11,11 @@ function WelcomeBanner() {
   else if (hour < 18) greeting = "Good Afternoon";
 
   return (
-    <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#7C3AED] via-[#6d28d9] to-[#312e81] p-6 shadow-[0_20px_70px_-24px_rgba(0,0,0,0.95)] sm:p-8">
-      <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-      <div className="absolute -bottom-12 -left-10 h-48 w-48 rounded-full bg-slate-950/20 blur-3xl" />
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#6546d7] via-[#4932a5] to-[#252453] p-6 shadow-[0_20px_70px_-24px_rgba(0,0,0,0.95)] sm:p-8">
+      <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-12 -left-10 h-48 w-48 rounded-full bg-slate-950/20 blur-3xl" />
 
-      <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
         <div className="max-w-2xl">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-yellow-300 shadow-lg shadow-violet-950/20">

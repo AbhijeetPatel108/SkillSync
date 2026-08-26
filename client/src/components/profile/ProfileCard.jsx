@@ -86,13 +86,30 @@ function ProfileCard({ user, onDeleteSkill }) {
 
           {user.skillsOffered?.length ? (
             <div className="flex flex-wrap gap-3">
-              {user.skillsOffered.map((skill, index) => (
-                <SkillBadge key={index} skill={skill} onDelete={onDeleteSkill} />
+              {user.skillsOffered?.map((skill, index) => (
+                <SkillBadge key={index} skill={skill} />
               ))}
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/50 p-6 text-center text-slate-400">
               No skills added yet.
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-xl font-semibold text-white">Skills Wanted</h3>
+            <span className="text-sm text-slate-400">{user.skillsWanted?.length || 0} listed</span>
+          </div>
+
+          {user.skillsWanted?.length ? (
+            <div className="flex flex-wrap gap-3">
+              {user.skillsWanted.map((skill, index) => <SkillBadge key={index} skill={skill} />)}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/50 p-6 text-center text-slate-400">
+              No learning goals added yet. Visit Skills to add some.
             </div>
           )}
         </div>

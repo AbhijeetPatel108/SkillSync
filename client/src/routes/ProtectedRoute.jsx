@@ -1,6 +1,5 @@
 import { Navigate } from "react-router-dom";
 import { FiLoader } from "react-icons/fi";
-
 import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children }) {

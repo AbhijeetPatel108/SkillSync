@@ -3,7 +3,6 @@ import { FiEdit, FiStar } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 import ProfileCard from "../../components/profile/ProfileCard";
-import SkillForm from "../../components/profile/SkillForm";
 import userService from "../../services/userService";
 
 function Profile() {
@@ -27,24 +26,6 @@ function Profile() {
     loadProfile();
   }, []);
 
-  const addSkill = async (skill) => {
-    try {
-      await userService.addOfferedSkill(skill);
-      loadProfile();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to add skill");
-    }
-  };
-
-  const removeSkill = async (name) => {
-    try {
-      await userService.removeOfferedSkill(name);
-      loadProfile();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to remove skill");
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.18),_transparent_45%),linear-gradient(135deg,_#020617_0%,_#0f172a_100%)] px-4 py-8 sm:px-6 lg:px-8">
@@ -61,12 +42,12 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.18),_transparent_45%),linear-gradient(135deg,_#020617_0%,_#0f172a_100%)] text-slate-100">
-      <div className="mx-auto flex max-w-7xl flex-col px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-        <div className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/70 shadow-[0_30px_90px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+      <div className="page-container">
+        <div className="page-panel overflow-hidden">
           <div className="relative overflow-hidden bg-gradient-to-br from-[#7C3AED] via-[#6d28d9] to-[#312e81]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.28),_transparent_45%)]" />
-            <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-slate-950/20 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.28),_transparent_45%)]" />
+            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 left-0 h-40 w-40 rounded-full bg-slate-950/20 blur-3xl" />
 
             <div className="relative flex flex-col justify-between gap-8 px-5 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
               <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -85,6 +66,12 @@ function Profile() {
                   <FiEdit />
                   Edit Profile
                 </button>
+                <button
+                  onClick={() => navigate("/skills")}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-lg"
+                >
+                  Manage Skills
+                </button>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -99,12 +86,9 @@ function Profile() {
           </div>
 
           <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-            <div className="grid gap-6 xl:grid-cols-[1.55fr_0.85fr] xl:items-start">
-              <div className="transition-all duration-300 hover:-translate-y-1">
-                <ProfileCard user={user} onDeleteSkill={removeSkill} />
-              </div>
-              <div className="transition-all duration-300 hover:-translate-y-1">
-                <SkillForm onSubmit={addSkill} />
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.85fr)] xl:items-start">
+              <div className="transition-all duration-300 hover:-translate-y-1 xl:col-span-2">
+                <ProfileCard user={user} />
               </div>
             </div>
           </div>
