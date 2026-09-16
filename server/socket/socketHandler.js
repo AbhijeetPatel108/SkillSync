@@ -169,6 +169,21 @@ const initSocketHandler = (io) => {
       try {
         if (!matchId) return;
 
+        const [matchRows] = await pool.execute(
+          'SELECT sender_id, receiver_id, status FROM matches WHERE id = ? LIMIT 1',
+          [matchId]
+        );
+        const match = matchRows[0];
+        const isParticipant = match && (
+          Number(match.sender_id) === Number(userId) ||
+          Number(match.receiver_id) === Number(userId)
+        );
+        if (!isParticipant || match.status !== MATCH_STATUS.ACCEPTED) {
+          return socket.emit(CHAT_EVENTS.ERROR, {
+            message: 'You do not have access to this conversation',
+          });
+        }
+
         await pool.execute(
           `INSERT INTO message_read_by (message_id, user_id)
            SELECT m.id, ?

@@ -2,7 +2,7 @@ import { FiAward, FiMapPin, FiMail, FiStar } from "react-icons/fi";
 
 import SkillBadge from "./SkillBadge";
 
-function ProfileCard({ user, onDeleteSkill }) {
+function ProfileCard({ user }) {
   const featuredSkill = user.skillsOffered?.[0]?.name || "collaboration";
 
   return (

@@ -1,5 +1,3 @@
-
-
 const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { getPagination, buildMeta } = require('../utils/helpers');
@@ -36,7 +34,7 @@ const serializeUserSummary = (row) => ({
 
 const getReviewWithUsers = async (reviewId) => {
   const [rows] = await pool.execute(
-    `SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at,
+    `SELECT r.id, r.match_id, r.rating, r.comment, r.created_at, r.updated_at,
             rr.id AS reviewer_user_id, rr.name AS reviewer_name, rr.avatar AS reviewer_avatar,
             rr.bio AS reviewer_bio, rr.location AS reviewer_location,
             rr.average_rating AS reviewer_average_rating, rr.total_reviews AS reviewer_total_reviews,
@@ -86,7 +84,7 @@ const getReviewWithUsers = async (reviewId) => {
     comment: reviewRow.comment || '',
     createdAt: reviewRow.created_at,
     updatedAt: reviewRow.updated_at,
-    matchId: null,
+    matchId: Number(reviewRow.match_id),
   };
 };
 

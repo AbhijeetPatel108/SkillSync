@@ -10,6 +10,8 @@ const skillRoutes  = require('./routes/skillRoutes');
 const matchRoutes  = require('./routes/matchRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const chatRoutes   = require('./routes/chatRoutes');   
+const projectRoutes = require('./routes/projectRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 app.use(helmet());
@@ -43,6 +45,8 @@ app.use('/api/skills',  skillRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/chat',    chatRoutes);    
+app.use('/api/projects', projectRoutes);
+app.use('/api/admin', adminRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

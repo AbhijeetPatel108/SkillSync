@@ -15,6 +15,8 @@ const errorHandler = (err, req, res, next) => {
       message = 'An account with this email already exists';
     } else if (String(err.message).includes('uq_reviews_reviewer_match')) {
       message = 'You have already submitted a review for this match';
+    } else if (String(err.message).includes('uq_matches_active_pair')) {
+      message = 'An active match request or match already exists with this user';
     } else {
       message = 'Duplicate record';
     }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import skillService from "../../services/skillService";
 import matchService from "../../services/matchService";
 import SkillCard from "../../components/skills/SkillCard";

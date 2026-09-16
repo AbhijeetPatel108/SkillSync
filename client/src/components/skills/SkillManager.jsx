@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FiBookOpen, FiPlus, FiTarget, FiTrash2, FiX } from "react-icons/fi";
+import { FiBookOpen, FiTarget, FiTrash2, FiX } from "react-icons/fi";
 
 import SkillForm from "../profile/SkillForm";
 import userService from "../../services/userService";

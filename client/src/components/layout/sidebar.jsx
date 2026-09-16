@@ -1,4 +1,4 @@
-import { FiBookOpen, FiMessageCircle, FiLogOut, FiUser, FiUsers, FiStar, FiLayout } from "react-icons/fi";
+import { FiBookOpen, FiMessageCircle, FiLogOut, FiUser, FiUsers, FiStar, FiLayout, FiFolder, FiShield } from "react-icons/fi";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
@@ -10,6 +10,7 @@ const menu = [
   { label: "Matches", to: "/matches", icon: <FiUsers size={18} /> },
   { label: "Reviews", to: "/matches", icon: <FiStar size={18} /> },
   { label: "Chat", to: "/messages", icon: <FiMessageCircle size={18} /> },
+  { label: "Projects", to: "/projects", icon: <FiFolder size={18} /> },
 ];
 
 function Sidebar() {
@@ -39,7 +40,7 @@ function Sidebar() {
         </div>
 
         <nav className="space-y-1.5">
-          {menu.map((item) => (
+          {[...menu, ...(user?.role === "admin" ? [{ label: "Admin", to: "/admin/users", icon: <FiShield size={18} /> }] : [])].map((item) => (
             <NavLink
               key={item.label}
               to={item.label === "Reviews" ? `/reviews/${user?._id || user?.id}` : item.to}

@@ -9,6 +9,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import Matches from "../pages/Matches/Matches";
 import Reviews from "../pages/Reviews/Reviews";
 import Chat from "../pages/Chat/Chat";
+import Projects from "../pages/Projects/Projects";
+import AdminUsers from "../pages/Admin/AdminUsers";
 import MainLayout from "../layouts/MainLayout";
 
 function ProtectedPage({ children }) {
@@ -79,6 +81,22 @@ function AppRoutes() {
           element={
             <ProtectedPage>
               <Chat />
+            </ProtectedPage>
+          }
+        />
+        <Route
+          path="/projects"
+          element={
+            <ProtectedPage>
+              <Projects />
+            </ProtectedPage>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedPage>
+              <AdminUsers />
             </ProtectedPage>
           }
         />

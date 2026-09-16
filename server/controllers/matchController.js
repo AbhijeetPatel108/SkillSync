@@ -3,6 +3,8 @@ const AppError = require('../utils/AppError');
 const { getPagination, buildMeta } = require('../utils/helpers');
 const { MATCH_STATUS } = require('../config/constants');
 const { fetchUsersPublicMap } = require('../utils/userSql');
+const getActivePairKey = (firstUserId, secondUserId) =>
+  `${Math.min(Number(firstUserId), Number(secondUserId))}:${Math.max(Number(firstUserId), Number(secondUserId))}`;
 const normalizePublicUser = (user) => ({
   id: Number(user.id),
   name: user.name,
@@ -189,8 +191,8 @@ const sendRequest = async (req, res) => {
     }
 
     await pool.execute(
-      'UPDATE matches SET status = ?, message = ? WHERE id = ?',
-      [MATCH_STATUS.PENDING, trimmedMessage, sameSender.id]
+      'UPDATE matches SET status = ?, message = ?, active_pair_key = ? WHERE id = ?',
+      [MATCH_STATUS.PENDING, trimmedMessage, getActivePairKey(req.user.id, receiverId), sameSender.id]
     );
 
     const match = await getMatchWithUsers(sameSender.id);
@@ -202,8 +204,8 @@ const sendRequest = async (req, res) => {
   }
 
   const [result] = await pool.execute(
-    'INSERT INTO matches (sender_id, receiver_id, message, status) VALUES (?, ?, ?, ?)',
-    [req.user.id, receiverId, trimmedMessage, MATCH_STATUS.PENDING]
+    'INSERT INTO matches (sender_id, receiver_id, message, status, active_pair_key) VALUES (?, ?, ?, ?, ?)',
+    [req.user.id, receiverId, trimmedMessage, MATCH_STATUS.PENDING, getActivePairKey(req.user.id, receiverId)]
   );
 
   const match = await getMatchWithUsers(result.insertId);
@@ -262,7 +264,7 @@ const rejectRequest = async (req, res) => {
     throw new AppError(`Cannot reject a request that is already '${match.status}'`, 400);
   }
 
-  await pool.execute('UPDATE matches SET status = ? WHERE id = ?', [MATCH_STATUS.REJECTED, req.params.id]);
+  await pool.execute('UPDATE matches SET status = ?, active_pair_key = NULL WHERE id = ?', [MATCH_STATUS.REJECTED, req.params.id]);
   const updated = await getMatchWithUsers(req.params.id);
 
   res.status(200).json({
@@ -291,7 +293,7 @@ const cancelRequest = async (req, res) => {
     throw new AppError(`Cannot cancel a request that is already '${match.status}'`, 400);
   }
 
-  await pool.execute('UPDATE matches SET status = ? WHERE id = ?', [MATCH_STATUS.CANCELLED, req.params.id]);
+  await pool.execute('UPDATE matches SET status = ?, active_pair_key = NULL WHERE id = ?', [MATCH_STATUS.CANCELLED, req.params.id]);
   const updated = await getMatchWithUsers(req.params.id);
 
   res.status(200).json({
@@ -310,21 +312,6 @@ const getSentRequests = async (req, res) => {
   const [countRows] = await pool.execute(
     'SELECT COUNT(*) AS total FROM matches WHERE sender_id = ? AND status = ?',
     [req.user.id, filterStatus]
-  );
-
-  const [rows] = await pool.execute(
-    `SELECT m.*, s.id AS sender_id, s.name AS sender_name, s.avatar AS sender_avatar,
-            s.bio AS sender_bio, s.location AS sender_location,
-            s.average_rating AS sender_average_rating, s.total_reviews AS sender_total_reviews,
-            r.id AS receiver_id, r.name AS receiver_name, r.avatar AS receiver_avatar,
-            r.bio AS receiver_bio, r.location AS receiver_location,
-            r.average_rating AS receiver_average_rating, r.total_reviews AS receiver_total_reviews
-     FROM matches m
-     JOIN users s ON s.id = m.sender_id
-     JOIN users r ON r.id = m.receiver_id
-     WHERE m.sender_id = ? AND m.status = ?
-     ORDER BY m.created_at DESC LIMIT ? OFFSET ?`,
-    [req.user.id, filterStatus, limit, skip]
   );
 
   const matches = await getMatchList(

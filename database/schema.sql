@@ -66,10 +66,12 @@ CREATE TABLE matches (
   receiver_id BIGINT UNSIGNED NOT NULL,
   status ENUM('pending', 'accepted', 'rejected', 'cancelled') NOT NULL DEFAULT 'pending',
   message VARCHAR(300) NOT NULL DEFAULT '',
+  active_pair_key VARCHAR(50) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_matches_sender_receiver_status (sender_id, receiver_id, status),
+  UNIQUE KEY uq_matches_active_pair (active_pair_key),
   KEY idx_matches_sender_status (sender_id, status),
   KEY idx_matches_receiver_status (receiver_id, status),
   KEY idx_matches_sender_receiver (sender_id, receiver_id),
@@ -127,4 +129,30 @@ CREATE TABLE reviews (
     FOREIGN KEY (reviewee_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_reviews_match
     FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE projects (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  owner_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(120) NOT NULL,
+  description VARCHAR(2000) NOT NULL DEFAULT '',
+  status ENUM('open', 'in_progress', 'completed', 'archived') NOT NULL DEFAULT 'open',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_projects_owner_created (owner_id, created_at DESC),
+  KEY idx_projects_status_created (status, created_at DESC),
+  CONSTRAINT fk_projects_owner
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE project_skills (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  project_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_project_skills_project_name (project_id, name),
+  KEY idx_project_skills_name (name),
+  CONSTRAINT fk_project_skills_project
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
