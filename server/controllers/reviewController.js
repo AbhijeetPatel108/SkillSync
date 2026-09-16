@@ -1,154 +1,154 @@
-/**
- * server/controllers/reviewController.js
- *
- * All business logic for the review and rating system.
- *
- * MVC role: CONTROLLER
- * Every function receives an authenticated request (req.user is always set
- * by the protect middleware), enforces business rules, and returns JSON.
- *
- * Express 5: async errors thrown here reach errorHandler automatically.
- * No try/catch anywhere in this file.
- *
- * Reused from existing codebase (nothing reimplemented):
- *   AppError       → utils/AppError.js
- *   getPagination  → utils/helpers.js
- *   buildMeta      → utils/helpers.js
- *   MATCH_STATUS   → config/constants.js
- *   protect        → middleware/authMiddleware.js  (applied in routes)
- *
- * ─── 6 endpoints ────────────────────────────────────────────────────────────
- *   createReview     POST   /api/reviews
- *   getUserReviews   GET    /api/reviews/user/:id
- *   getMyReviews     GET    /api/reviews/me
- *   getGivenReviews  GET    /api/reviews/given
- *   deleteReview     DELETE /api/reviews/:id
- *   getReviewById    GET    /api/reviews/:id
- */
-
-const Review   = require('../models/Review');
-const Match    = require('../models/Match');
+const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { getPagination, buildMeta } = require('../utils/helpers');
 const { MATCH_STATUS } = require('../config/constants');
+const { fetchUsersPublicMap } = require('../utils/userSql');
 
-// ─── Field whitelist for populated user data ──────────────────────────────────
-// Identical to the whitelist used in matchController — never expose
-// password, lastLogin, isActive, role in any populated reference.
-// averageRating and totalReviews are included so a reviewer's profile
-// card can show their own rating when displayed alongside their review.
-const USER_PUBLIC_FIELDS = 'name avatar bio location averageRating totalReviews';
+const recalcUserStats = async (userId) => {
+  const [rows] = await pool.execute(
+    `SELECT AVG(rating) AS avg_rating, COUNT(*) AS total_reviews
+     FROM reviews WHERE reviewee_id = ?`,
+    [userId]
+  );
 
-// ─── createReview ─────────────────────────────────────────────────────────────
-// @route   POST /api/reviews
-// @access  Private
-// @body    { revieweeId, matchId, rating, comment? }
-//
-// Business rules enforced in order:
-//   1. No self-review
-//   2. matchId + rating are required
-//   3. rating is an integer 1–5
-//   4. The match must exist and be accepted
-//   5. The reviewer must be a participant in that match
-//   6. No duplicate review for the same match by the same reviewer
+  const avg = Number(rows[0]?.avg_rating || 0);
+  const total = Number(rows[0]?.total_reviews || 0);
+
+  await pool.execute(
+    'UPDATE users SET average_rating = ?, total_reviews = ? WHERE id = ?',
+    [avg, total, userId]
+  );
+};
+
+const serializeUserSummary = (row) => ({
+  id: Number(row.id),
+  name: row.name,
+  avatar: row.avatar || '',
+  bio: row.bio || '',
+  location: row.location || '',
+  averageRating: Number(row.average_rating || row.averageRating || 0),
+  totalReviews: Number(row.total_reviews || row.totalReviews || 0),
+  skillsOffered: row.skillsOffered || [],
+  skillsWanted: row.skillsWanted || [],
+});
+
+const getReviewWithUsers = async (reviewId) => {
+  const [rows] = await pool.execute(
+    `SELECT r.id, r.match_id, r.rating, r.comment, r.created_at, r.updated_at,
+            rr.id AS reviewer_user_id, rr.name AS reviewer_name, rr.avatar AS reviewer_avatar,
+            rr.bio AS reviewer_bio, rr.location AS reviewer_location,
+            rr.average_rating AS reviewer_average_rating, rr.total_reviews AS reviewer_total_reviews,
+            re.id AS reviewee_user_id, re.name AS reviewee_name, re.avatar AS reviewee_avatar,
+            re.bio AS reviewee_bio, re.location AS reviewee_location,
+            re.average_rating AS reviewee_average_rating, re.total_reviews AS reviewee_total_reviews
+     FROM reviews r
+     JOIN users rr ON rr.id = r.reviewer_id
+     JOIN users re ON re.id = r.reviewee_id
+     WHERE r.id = ? LIMIT 1`,
+    [reviewId]
+  );
+
+  const reviewRow = rows[0];
+  if (!reviewRow) return null;
+
+  const reviewerMap = await fetchUsersPublicMap([Number(reviewRow.reviewer_user_id), Number(reviewRow.reviewee_user_id)]);
+  const reviewer = serializeUserSummary({
+    id: reviewRow.reviewer_user_id,
+    name: reviewRow.reviewer_name,
+    avatar: reviewRow.reviewer_avatar,
+    bio: reviewRow.reviewer_bio,
+    location: reviewRow.reviewer_location,
+    average_rating: reviewRow.reviewer_average_rating,
+    total_reviews: reviewRow.reviewer_total_reviews,
+    skillsOffered: reviewerMap.get(Number(reviewRow.reviewer_user_id))?.skillsOffered || [],
+    skillsWanted: reviewerMap.get(Number(reviewRow.reviewer_user_id))?.skillsWanted || [],
+  });
+
+  const reviewee = serializeUserSummary({
+    id: reviewRow.reviewee_user_id,
+    name: reviewRow.reviewee_name,
+    avatar: reviewRow.reviewee_avatar,
+    bio: reviewRow.reviewee_bio,
+    location: reviewRow.reviewee_location,
+    average_rating: reviewRow.reviewee_average_rating,
+    total_reviews: reviewRow.reviewee_total_reviews,
+    skillsOffered: reviewerMap.get(Number(reviewRow.reviewee_user_id))?.skillsOffered || [],
+    skillsWanted: reviewerMap.get(Number(reviewRow.reviewee_user_id))?.skillsWanted || [],
+  });
+
+  return {
+    id: Number(reviewRow.id),
+    reviewer,
+    reviewee,
+    rating: Number(reviewRow.rating),
+    comment: reviewRow.comment || '',
+    createdAt: reviewRow.created_at,
+    updatedAt: reviewRow.updated_at,
+    matchId: Number(reviewRow.match_id),
+  };
+};
+
 const createReview = async (req, res) => {
   const { revieweeId, matchId, rating, comment } = req.body;
 
-  // ── Required field checks ─────────────────────────────────────────────────
   if (!revieweeId) throw new AppError('revieweeId is required', 400);
-  if (!matchId)    throw new AppError('matchId is required', 400);
-  if (rating === undefined || rating === null) {
-    throw new AppError('rating is required', 400);
-  }
+  if (!matchId) throw new AppError('matchId is required', 400);
+  if (rating === undefined || rating === null) throw new AppError('rating is required', 400);
 
-  // ── No self-review ────────────────────────────────────────────────────────
-  if (req.user.id.toString() === revieweeId.toString()) {
+  if (Number(req.user.id) === Number(revieweeId)) {
     throw new AppError('You cannot review yourself', 400);
   }
 
-  // ── Rating must be integer 1–5 ────────────────────────────────────────────
-  // parseInt catches "4.7", "abc", etc. — the schema min/max is a second layer.
-  const parsedRating = parseInt(rating, 10);
-  if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+  const parsedRating = Number.parseInt(rating, 10);
+  if (Number.isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
     throw new AppError('Rating must be a whole number between 1 and 5', 400);
   }
 
-  // ── Comment length ────────────────────────────────────────────────────────
-  if (comment && comment.trim().length > 500) {
+  if (comment && String(comment).trim().length > 500) {
     throw new AppError('Comment cannot exceed 500 characters', 400);
   }
 
-  // ── Verify the match exists and is accepted ───────────────────────────────
-  // A review is only valid when the two users have completed (accepted) a match.
-  // We fetch the match document so we can verify participation in the next step.
-  const match = await Match.findById(matchId);
+  const [matchRows] = await pool.execute(
+    'SELECT id, sender_id, receiver_id, status FROM matches WHERE id = ? LIMIT 1',
+    [matchId]
+  );
+  const match = matchRows[0];
+
   if (!match) {
     throw new AppError('Match not found', 404);
   }
   if (match.status !== MATCH_STATUS.ACCEPTED) {
-    throw new AppError(
-      'You can only review users from an accepted match',
-      400
-    );
+    throw new AppError('You can only review users from an accepted match', 400);
   }
 
-  // ── Verify the reviewer participated in this match ────────────────────────
-  // The logged-in user must be either the sender or receiver of the match.
-  // This prevents User C from submitting a review for a match between A and B.
-  const reviewerId = req.user.id.toString();
-  const isSender   = match.sender.toString()   === reviewerId;
-  const isReceiver = match.receiver.toString() === reviewerId;
-
+  const isSender = Number(match.sender_id) === Number(req.user.id);
+  const isReceiver = Number(match.receiver_id) === Number(req.user.id);
   if (!isSender && !isReceiver) {
     throw new AppError('You were not a participant in this match', 403);
   }
 
-  // ── Verify revieweeId is the OTHER participant ────────────────────────────
-  // The reviewer must be leaving a review FOR the other person in the match,
-  // not for a third party entirely outside the match.
-  const otherParticipantId = isSender
-    ? match.receiver.toString()
-    : match.sender.toString();
-
-  if (revieweeId.toString() !== otherParticipantId) {
-    throw new AppError(
-      'You can only review the other participant of this match',
-      400
-    );
+  const otherParticipantId = isSender ? match.receiver_id : match.sender_id;
+  if (Number(revieweeId) !== Number(otherParticipantId)) {
+    throw new AppError('You can only review the other participant of this match', 400);
   }
 
-  // ── Duplicate check — controller layer ───────────────────────────────────
-  // The compound unique index on (reviewer, match) is the DB-level guard.
-  // This check provides a friendly message before hitting that constraint.
-  const existing = await Review.findOne({
-    reviewer: req.user.id,
-    match:    matchId,
-  });
-  if (existing) {
+  const [existingRows] = await pool.execute(
+    'SELECT id FROM reviews WHERE reviewer_id = ? AND match_id = ? LIMIT 1',
+    [req.user.id, matchId]
+  );
+  if (existingRows[0]) {
     throw new AppError('You have already submitted a review for this match', 409);
   }
 
-  // ── Create the review ─────────────────────────────────────────────────────
-  const review = await Review.create({
-    reviewer: req.user.id,
-    reviewee: revieweeId,
-    match:    matchId,
-    rating:   parsedRating,
-    comment:  comment ? comment.trim() : '',
-  });
+  const trimmedComment = comment ? String(comment).trim() : '';
+  const [result] = await pool.execute(
+    'INSERT INTO reviews (reviewer_id, reviewee_id, match_id, rating, comment) VALUES (?, ?, ?, ?, ?)',
+    [req.user.id, revieweeId, matchId, parsedRating, trimmedComment]
+  );
 
-  // ── Recalculate reviewee's averageRating and totalReviews ─────────────────
-  // This runs AFTER the review is saved. It uses a MongoDB aggregation to
-  // recompute the exact average from all reviews, then writes it to User.
-  // We await it so the response reflects the updated rating immediately.
-  await Review.recalcStats(revieweeId);
+  await recalcUserStats(revieweeId);
 
-  // Populate reviewer and reviewee for a rich response
-  await review.populate([
-    { path: 'reviewer', select: USER_PUBLIC_FIELDS },
-    { path: 'reviewee', select: USER_PUBLIC_FIELDS },
-  ]);
-
+  const review = await getReviewWithUsers(result.insertId);
   res.status(201).json({
     success: true,
     message: 'Review submitted successfully',
@@ -156,121 +156,117 @@ const createReview = async (req, res) => {
   });
 };
 
-// ─── getUserReviews ───────────────────────────────────────────────────────────
-// @route   GET /api/reviews/user/:id
-// @access  Private
-// @query   ?page=1&limit=10
-//
-// Returns all reviews received by any user (their public review wall).
-// Populated with reviewer info — no N+1 queries.
 const getUserReviews = async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query);
   const { id: revieweeId } = req.params;
-  const { page, limit, skip } = getPagination(req.query);
 
-  // Run count + data queries in parallel — same pattern as Modules 4 and 5.
-  const [total, reviews] = await Promise.all([
-    Review.countDocuments({ reviewee: revieweeId }),
-    Review.find({ reviewee: revieweeId })
-      .populate('reviewer', USER_PUBLIC_FIELDS)  // who wrote each review
-      .select('-reviewee')                       // no need to repeat reviewee in every item
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-  ]);
+  const [countRows] = await pool.execute(
+    'SELECT COUNT(*) AS total FROM reviews WHERE reviewee_id = ?',
+    [revieweeId]
+  );
+
+  const [rows] = await pool.execute(
+    `SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at,
+            rr.id AS reviewer_id, rr.name AS reviewer_name, rr.avatar AS reviewer_avatar,
+            rr.bio AS reviewer_bio, rr.location AS reviewer_location,
+            rr.average_rating AS reviewer_average_rating, rr.total_reviews AS reviewer_total_reviews
+     FROM reviews r
+     JOIN users rr ON rr.id = r.reviewer_id
+     WHERE r.reviewee_id = ?
+     ORDER BY r.created_at DESC LIMIT ? OFFSET ?`,
+    [revieweeId, limit, skip]
+  );
+
+  const mappedReviews = rows.map((row) => ({
+    id: Number(row.id),
+    reviewer: serializeUserSummary({
+      id: row.reviewer_id,
+      name: row.reviewer_name,
+      avatar: row.reviewer_avatar,
+      bio: row.reviewer_bio,
+      location: row.reviewer_location,
+      average_rating: row.reviewer_average_rating,
+      total_reviews: row.reviewer_total_reviews,
+    }),
+    rating: Number(row.rating),
+    comment: row.comment || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 
   res.status(200).json({
     success: true,
-    meta:    buildMeta(total, page, limit),
-    reviews,
+    meta: buildMeta(Number(countRows[0].total || 0), page, limit),
+    reviews: mappedReviews,
   });
 };
 
-// ─── getMyReviews ─────────────────────────────────────────────────────────────
-// @route   GET /api/reviews/me
-// @access  Private
-// @query   ?page=1&limit=10
-//
-// Returns all reviews the logged-in user has RECEIVED.
-// Identical query to getUserReviews but uses req.user.id — no :id param needed.
-// This is the "my reputation" view for the logged-in user's dashboard.
 const getMyReviews = async (req, res) => {
-  const { page, limit, skip } = getPagination(req.query);
-
-  const [total, reviews] = await Promise.all([
-    Review.countDocuments({ reviewee: req.user.id }),
-    Review.find({ reviewee: req.user.id })
-      .populate('reviewer', USER_PUBLIC_FIELDS)
-      .select('-reviewee')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-  ]);
-
-  res.status(200).json({
-    success: true,
-    meta:    buildMeta(total, page, limit),
-    reviews,
-  });
+  req.params = { id: req.user.id };
+  return getUserReviews(req, res);
 };
 
-// ─── getGivenReviews ──────────────────────────────────────────────────────────
-// @route   GET /api/reviews/given
-// @access  Private
-// @query   ?page=1&limit=10
-//
-// Returns all reviews the logged-in user has WRITTEN.
-// Useful for "reviews I've left" history so users can see what they said
-// and whether they want to delete any.
 const getGivenReviews = async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
 
-  const [total, reviews] = await Promise.all([
-    Review.countDocuments({ reviewer: req.user.id }),
-    Review.find({ reviewer: req.user.id })
-      .populate('reviewee', USER_PUBLIC_FIELDS)  // who was reviewed
-      .select('-reviewer')                       // no need to repeat reviewer in every item
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
-  ]);
+  const [countRows] = await pool.execute(
+    'SELECT COUNT(*) AS total FROM reviews WHERE reviewer_id = ?',
+    [req.user.id]
+  );
+
+  const [rows] = await pool.execute(
+    `SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at,
+            re.id AS reviewee_id, re.name AS reviewee_name, re.avatar AS reviewee_avatar,
+            re.bio AS reviewee_bio, re.location AS reviewee_location,
+            re.average_rating AS reviewee_average_rating, re.total_reviews AS reviewee_total_reviews
+     FROM reviews r
+     JOIN users re ON re.id = r.reviewee_id
+     WHERE r.reviewer_id = ?
+     ORDER BY r.created_at DESC LIMIT ? OFFSET ?`,
+    [req.user.id, limit, skip]
+  );
+
+  const mappedReviews = rows.map((row) => ({
+    id: Number(row.id),
+    reviewee: serializeUserSummary({
+      id: row.reviewee_id,
+      name: row.reviewee_name,
+      avatar: row.reviewee_avatar,
+      bio: row.reviewee_bio,
+      location: row.reviewee_location,
+      average_rating: row.reviewee_average_rating,
+      total_reviews: row.reviewee_total_reviews,
+    }),
+    rating: Number(row.rating),
+    comment: row.comment || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 
   res.status(200).json({
     success: true,
-    meta:    buildMeta(total, page, limit),
-    reviews,
+    meta: buildMeta(Number(countRows[0].total || 0), page, limit),
+    reviews: mappedReviews,
   });
 };
 
-// ─── deleteReview ─────────────────────────────────────────────────────────────
-// @route   DELETE /api/reviews/:id
-// @access  Private — only the reviewer who wrote it can delete it
-//
-// Deletes the review document and immediately recalculates the reviewee's
-// averageRating and totalReviews. The stats on the User document are updated
-// atomically before the response is sent.
 const deleteReview = async (req, res) => {
-  const review = await Review.findById(req.params.id);
+  const [rows] = await pool.execute(
+    'SELECT id, reviewer_id, reviewee_id FROM reviews WHERE id = ? LIMIT 1',
+    [req.params.id]
+  );
 
+  const review = rows[0];
   if (!review) {
     throw new AppError('Review not found', 404);
   }
 
-  // ── Only the original reviewer can delete their review ────────────────────
-  if (review.reviewer.toString() !== req.user.id.toString()) {
+  if (Number(review.reviewer_id) !== Number(req.user.id)) {
     throw new AppError('You can only delete your own reviews', 403);
   }
 
-  // Store revieweeId BEFORE deleting — we need it for recalcStats after.
-  const revieweeId = review.reviewee;
-
-  // deleteOne() removes this specific document from the collection.
-  // We use deleteOne() on the instance rather than findByIdAndDelete()
-  // because we already have the document and want to avoid a second DB read.
-  await review.deleteOne();
-
-  // Recalculate the reviewee's stats now that one review is gone.
-  // If this was their last review, recalcStats resets both fields to 0.
-  await Review.recalcStats(revieweeId);
+  await pool.execute('DELETE FROM reviews WHERE id = ?', [req.params.id]);
+  await recalcUserStats(review.reviewee_id);
 
   res.status(200).json({
     success: true,
@@ -278,26 +274,13 @@ const deleteReview = async (req, res) => {
   });
 };
 
-// ─── getReviewById ────────────────────────────────────────────────────────────
-// @route   GET /api/reviews/:id
-// @access  Private
-//
-// Returns a single review document with populated reviewer and reviewee.
-// Any authenticated user can read any individual review (reviews are public
-// reputation data, not private like matches).
 const getReviewById = async (req, res) => {
-  const review = await Review.findById(req.params.id)
-    .populate('reviewer', USER_PUBLIC_FIELDS)
-    .populate('reviewee', USER_PUBLIC_FIELDS);
-
+  const review = await getReviewWithUsers(req.params.id);
   if (!review) {
     throw new AppError('Review not found', 404);
   }
 
-  res.status(200).json({
-    success: true,
-    review,
-  });
+  res.status(200).json({ success: true, review });
 };
 
 module.exports = {

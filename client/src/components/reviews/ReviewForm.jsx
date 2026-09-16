@@ -1,0 +1,47 @@
+import { useState } from "react";
+import RatingStars from "./RatingStars";
+
+function ReviewForm({ onSubmit }) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    onSubmit({ rating, comment });
+
+    setRating(5);
+    setComment("");
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="surface p-6">
+      <h2 className="mb-6 text-xl font-semibold text-white">Write a Review</h2>
+
+      <div className="mb-5">
+        <p className="mb-2 text-sm font-medium text-slate-300">Rating</p>
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+          <RatingStars rating={rating} editable onChange={setRating} />
+          <span className="text-sm font-semibold text-amber-200">{rating}/5</span>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <label className="mb-2 block text-sm font-medium text-slate-300">Comment</label>
+        <textarea
+          rows={5}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Share your experience..."
+          className="control w-full resize-none p-3 text-white outline-none transition"
+        />
+      </div>
+
+      <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-[#7C3AED] to-[#8b5cf6] py-3 font-semibold text-white transition hover:-translate-y-0.5">
+        Submit Review
+      </button>
+    </form>
+  );
+}
+
+export default ReviewForm;
